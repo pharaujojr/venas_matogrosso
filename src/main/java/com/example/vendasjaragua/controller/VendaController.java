@@ -19,6 +19,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
+
+import java.time.LocalDate;
+import java.util.List;
+import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDate;
 
 import java.util.List;
@@ -40,6 +44,20 @@ public class VendaController {
         try {
             Venda novaVenda = vendaRepository.save(venda);
             return new ResponseEntity<>(novaVenda, HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Venda> updateVenda(@PathVariable Long id, @RequestBody Venda venda) {
+        if (!vendaRepository.existsById(id)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        venda.setId(id);
+        try {
+            Venda updatedVenda = vendaRepository.save(venda);
+            return new ResponseEntity<>(updatedVenda, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -213,6 +231,46 @@ public class VendaController {
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @GetMapping("/dashboard/mensal")
+    public ResponseEntity<List<Object[]>> getDashboardMensal(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim
+    ) {
+        if (inicio == null) inicio = LocalDate.of(2000, 1, 1);
+        if (fim == null) fim = LocalDate.now().plusYears(100);
+        return new ResponseEntity<>(vendaRepository.findVendasPorMes(inicio, fim), HttpStatus.OK);
+    }
+
+    @GetMapping("/dashboard/vendedores")
+    public ResponseEntity<List<Object[]>> getDashboardVendedores(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim
+    ) {
+        if (inicio == null) inicio = LocalDate.of(2000, 1, 1);
+        if (fim == null) fim = LocalDate.now().plusYears(100);
+        return new ResponseEntity<>(vendaRepository.findVendasPorVendedor(inicio, fim), HttpStatus.OK);
+    }
+
+    @GetMapping("/dashboard/times")
+    public ResponseEntity<List<Object[]>> getDashboardTimes(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim
+    ) {
+        if (inicio == null) inicio = LocalDate.of(2000, 1, 1);
+        if (fim == null) fim = LocalDate.now().plusYears(100);
+        return new ResponseEntity<>(vendaRepository.findVendasPorTime(inicio, fim), HttpStatus.OK);
+    }
+
+    @GetMapping("/dashboard/times-mensal")
+    public ResponseEntity<List<Object[]>> getDashboardTimesMensal(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim
+    ) {
+        if (inicio == null) inicio = LocalDate.of(2000, 1, 1);
+        if (fim == null) fim = LocalDate.now().plusYears(100);
+        return new ResponseEntity<>(vendaRepository.findEvolucaoVendasPorTime(inicio, fim), HttpStatus.OK);
     }
 }
 

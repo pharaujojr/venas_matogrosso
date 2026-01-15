@@ -15,6 +15,9 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.util.Collections;
+import com.example.vendasjaragua.model.VendaItem;
+
 @Service
 @RequiredArgsConstructor
 public class ExcelService {
@@ -75,7 +78,19 @@ public class ExcelService {
                 venda.setValorVenda(getBigDecimalValue(row.getCell(12)));
                 venda.setValorMaterial(getBigDecimalValue(row.getCell(13)));
                 // campos calculados automaticamente pelo modelo: row.getCell(14) e (15) sao ignorados.
-                venda.setProduto(getStringValue(row.getCell(16)));
+                
+                String rawProduto = getStringValue(row.getCell(16));
+                if (rawProduto != null && !rawProduto.trim().isEmpty()) {
+                    VendaItem item = new VendaItem();
+                    item.setNomeProduto(rawProduto);
+                    item.setQuantidade(1);
+                    item.setValorUnitarioVenda(BigDecimal.ZERO); // Valor desconhecido na importação simples
+                    item.setValorUnitarioCusto(BigDecimal.ZERO);
+                    venda.setProduto(new ArrayList<>(Collections.singletonList(item)));
+                } else {
+                    venda.setProduto(new ArrayList<>());
+                }
+                
                 venda.setTime(getStringValue(row.getCell(17)));
 
                 vendas.add(venda);

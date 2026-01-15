@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vendas Jaraguá</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600&display=swap');
 
@@ -211,7 +212,7 @@
             background-color: var(--card-bg);
             padding: 30px;
             border-radius: 8px;
-            width: 90%; max-width: 800px; max-height: 90vh;
+            width: 95%; max-width: 1100px; max-height: 90vh;
             overflow-y: auto;
             box-shadow: 0 20px 50px rgba(0,0,0,0.5);
             border: 1px solid var(--border-color);
@@ -330,6 +331,7 @@
             <button class="tab-button active" onclick="switchTab('vendas')">Vendas</button>
             <button class="tab-button" onclick="switchTab('cadastros')">Cadastros</button>
             <button class="tab-button" onclick="switchTab('produtos')">Produtos</button>
+            <button class="tab-button" onclick="switchTab('dashboards')">Dashboards</button>
         </div>
 
         <!-- TAB VENDAS -->
@@ -444,37 +446,134 @@
             </div>
         </div>
 
+        <!-- TAB DASHBOARDS -->
+        <div id="tab-dashboards" class="tab-content">
+            
+            <!-- Filters & Stats -->
+            <div style="background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 15px; border: 1px solid var(--border-color);">
+                <div class="form-group" style="margin:0; min-width: 150px;">
+                    <label>De:</label>
+                    <input type="date" id="dashDataInicio" onchange="loadDashboards()">
+                </div>
+                <div class="form-group" style="margin:0; min-width: 150px;">
+                    <label>Até:</label>
+                    <input type="date" id="dashDataFim" onchange="loadDashboards()">
+                </div>
+                <button class="btn btn-secondary" onclick="clearDashFilters()" style="margin-bottom: 2px;">Limpar</button>
+
+                <div style="margin-left: auto; text-align: right;">
+                    <small style="color: var(--accent); display: block;">TOTAL NO PERÍODO</small>
+                    <span id="dashTotalPeriodo" style="font-size: 1.8em; font-weight: bold; color: #00bcf2;">R$ 0,00</span>
+                </div>
+            </div>
+
+            <div class="cadastros-grid">
+                <div class="cadastro-panel">
+                    <h3 style="margin:0 0 15px 0;">Evolução Mensal de Vendas</h3>
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="chartMensal"></canvas>
+                    </div>
+                </div>
+                <div class="cadastro-panel">
+                    <h3 style="margin:0 0 15px 0;">Top Vendedores</h3>
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="chartVendedores"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team Dashboards -->
+             <div class="cadastros-grid" style="margin-top: 20px;">
+                <div class="cadastro-panel">
+                    <h3 style="margin:0 0 15px 0;">Vendas por Time (Total)</h3>
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="chartTimesPie"></canvas>
+                    </div>
+                </div>
+                <div class="cadastro-panel">
+                    <h3 style="margin:0 0 15px 0;">Evolução Mensal por Time</h3>
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="chartTimesLine"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- MODAL NOVA VENDA -->
     <div class="modal-overlay" id="vendaModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 style="margin:0; font-weight: 300;">Nova Venda</h2>
+                <h2 style="margin:0; font-weight: 300;" id="modalVendaTitle">Nova Venda</h2>
                 <button class="modal-close" onclick="closeModal()">&times;</button>
             </div>
             
+            <input type="hidden" id="vendaId">
+
             <div class="form-grid">
                 <div class="form-group"><label>Cliente</label><input type="text" id="cliente"></div>
                 <div class="form-group"><label>Telefone</label><input type="text" id="telefone"></div>
                 <div class="form-group"><label>Cidade</label><input type="text" id="cidade"></div>
                 <div class="form-group"><label>Estado</label><input type="text" id="estado" maxlength="2" style="text-transform: uppercase;"></div>
                 <div class="form-group"><label>Vendedor</label><select id="vendedorSelect"><option value="">Selecione...</option></select></div>
-                <div class="form-group"><label>Time</label><select id="timeSelect"><option value="">Selecione...</option></select></div>
+                <div class="form-group"><label>Time</label><input type="text" id="timeSelect" readonly style="background: rgba(255,255,255,0.05); cursor: default; border: 1px solid var(--border-color);"></div>
                 <div class="form-group"><label>Data</label><input type="date" id="data"></div>
                 <div class="form-group"><label>Placas</label><input type="text" id="placas"></div>
                 <div class="form-group"><label>Inversor</label><input type="text" id="inversor"></div>
                 <div class="form-group"><label>Potência</label><input type="text" id="potencia"></div>
-                <div class="form-group"><label>Valor Venda</label><input type="number" step="0.01" id="valorVenda"></div>
-                <div class="form-group"><label>Valor Material</label><input type="number" step="0.01" id="valorMaterial"></div>
-                <div class="form-group"><label>Produto</label><input type="text" id="produto"></div>
+                <div class="form-group"><label>Valor Venda (Total)</label><input type="number" step="0.01" id="valorVenda" readonly style="background-color: transparent; border-color: transparent; color: white; font-weight: bold;"></div>
+                <div class="form-group"><label>Valor Material (Total)</label><input type="number" step="0.01" id="valorMaterial" readonly style="background-color: transparent; border-color: transparent; color: white; font-weight: bold;"></div>
                 <div class="form-group"><label>NF</label><input type="text" id="nf"></div>
                 <div class="form-group"><label>OV</label><input type="text" id="ov"></div>
+            </div>
+
+            <!-- ITEMS SECTION -->
+            <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                <h4 style="margin: 0 0 10px 0;">Itens da Venda</h4>
+                <div style="display: grid; grid-template-columns: 2fr 80px 120px 120px auto; gap: 10px; align-items: end; background: rgba(255,255,255,0.02); padding: 10px; border-radius: 4px;">
+                    <div class="form-group" style="margin:0;">
+                         <label style="font-size:0.8em">Produto</label>
+                         <select id="itemProdutoSelect" style="width:100%"><option value="">Selecione...</option></select>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                         <label style="font-size:0.8em">Qtd</label>
+                         <input type="number" id="itemQtd" value="1" min="1" style="padding: 5px;">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                         <label style="font-size:0.8em">Vlr. Venda (Un)</label>
+                         <input type="number" id="itemValorVenda" step="0.01" style="padding: 5px;">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                         <label style="font-size:0.8em">Custo Mat. (Un)</label>
+                         <input type="number" id="itemCusto" step="0.01" style="padding: 5px;">
+                    </div>
+                    <button class="btn" onclick="addItemToCart()" style="height: 36px; margin-bottom: 2px; white-space: nowrap;">Adicionar</button>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table id="cartTable" style="width:100%; margin-top: 10px; border-collapse: collapse; min-width: 600px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--border-color); font-size: 0.85em; text-align: left;">
+                                <th style="padding: 8px;">Produto</th>
+                                <th style="width:60px; padding: 8px;">Qtd</th>
+                                <th style="width:100px; padding: 8px;">Unit. Venda</th>
+                                <th style="width:100px; padding: 8px;">Unit. Custo</th>
+                                <th style="width:100px; padding: 8px;">Total</th>
+                                <th style="width:40px; padding: 8px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody style="font-size: 0.85em;">
+                            <!-- Items go here -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
             
             <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
                 <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-                <button class="btn" onclick="salvarVenda()">Salvar</button>
+                <button class="btn" id="btnEditVenda" onclick="enableEdit()" style="display:none; background-color: var(--accent);">Editar</button>
+                <button class="btn" id="btnSalvarVenda" onclick="salvarVenda()">Salvar</button>
             </div>
             <span id="saveStatus" style="display:block; text-align: right; margin-top: 10px; color: var(--accent);"></span>
         </div>
@@ -566,7 +665,12 @@
             <div class="form-grid">
                 <div class="form-group">
                     <label>Grupo</label>
-                    <input type="text" id="produtoGrupo">
+                    <select id="produtoGrupo">
+                        <option value="SOLAR">SOLAR</option>
+                        <option value="EQUIPAMENTOS">EQUIPAMENTOS</option>
+                        <option value="CAMERAS">CAMERAS</option>
+                        <option value="BATERIAS">BATERIAS</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Unidade</label>
@@ -583,6 +687,7 @@
     <script>
         let currentPage = 0;
         const pageSize = 50;
+        let _CACHE_CURRENT_PAGE_VENDAS = [];
         let totalPages = 0;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -590,7 +695,8 @@
             loadAuxData(); // Load 'Vendedores' and 'Times' for dropdowns and lists
             loadProdutos(); // NEW: Load Products
 
-            // Modal outside click close
+            // Modal outside click close REMOVED per user request
+            /*
             document.querySelectorAll('.modal-overlay').forEach(overlay => {
                 overlay.addEventListener('click', (e) => {
                     if (e.target === overlay) {
@@ -602,6 +708,7 @@
                     }
                 });
             });
+            */
         });
 
         // Tab Switching
@@ -610,11 +717,15 @@
             document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
             
             document.getElementById('tab-' + tabName).classList.add('active');
-            // Find user friendly way to highlight button. Assuming order.
+            // Find user friendly way to highlight button
             const buttons = document.querySelectorAll('.tab-button');
             if (tabName === 'vendas') buttons[0].classList.add('active');
             if (tabName === 'cadastros') buttons[1].classList.add('active');
-            if (tabName === 'produtos') buttons[2].classList.add('active'); // NEW
+            if (tabName === 'produtos') buttons[2].classList.add('active');
+            if (tabName === 'dashboards') { 
+                buttons[3].classList.add('active');
+                loadDashboards();
+            }
         }
 
         // Toggle Import Section
@@ -625,8 +736,110 @@
 
         // Modal Controls
         function openModal() {
+            document.getElementById('modalVendaTitle').innerText = 'Nova Venda';
             document.getElementById('saveStatus').innerText = '';
+            document.getElementById('vendaId').value = ''; // Reset ID
+            
+            // Show Save, Hide Edit
+            document.getElementById('btnSalvarVenda').style.display = 'block';
+            document.getElementById('btnEditVenda').style.display = 'none';
+
+            // Reset fields
+            const fields = ['cliente', 'telefone', 'cidade', 'estado', 'vendedorSelect', 'timeSelect', 'data', 'placas', 'inversor', 'potencia', 'valorVenda', 'valorMaterial', 'nf', 'ov'];
+            fields.forEach(f => {
+                const el = document.getElementById(f);
+                if(el) {
+                    el.value = '';
+                    el.disabled = false;
+                }
+            });
+            
+            // Enable Cart Inputs
+            document.getElementById('itemProdutoSelect').disabled = false;
+            document.getElementById('itemQtd').disabled = false;
+            document.getElementById('itemValorVenda').disabled = false;
+            document.getElementById('itemCusto').disabled = false;
+            document.querySelector("button[onclick='addItemToCart()']").disabled = false;
+
+            // Reset Cart
+            currentCart = [];
+            updateCartTable();
+            
             document.getElementById('vendaModal').classList.add('modal-active');
+        }
+
+        function openVendaDetails(index) {
+            const venda = _CACHE_CURRENT_PAGE_VENDAS[index];
+            if (!venda) return;
+            
+            openModal(); // Reset first
+            document.getElementById('modalVendaTitle').innerText = 'Detalhes da Venda';
+            
+            // Populate
+            document.getElementById('vendaId').value = venda.id;
+            document.getElementById('cliente').value = venda.cliente || '';
+            document.getElementById('telefone').value = venda.telefone || '';
+            document.getElementById('cidade').value = venda.cidade || '';
+            document.getElementById('estado').value = venda.estado || '';
+            
+            // Dropdowns need special care
+            const vendSel = document.getElementById('vendedorSelect');
+            vendSel.value = venda.vendedor || '';
+            // Trigger manual change event simulation to load time? 
+            // Better set time manually if it doesn't auto-trigger or if existing in text.
+            document.getElementById('timeSelect').value = venda.time || '';
+
+            document.getElementById('data').value = venda.data || '';
+            document.getElementById('placas').value = venda.placas || '';
+            document.getElementById('inversor').value = venda.inversor || '';
+            document.getElementById('potencia').value = venda.potencia || '';
+            document.getElementById('valorVenda').value = venda.valorVenda || '';
+            document.getElementById('valorMaterial').value = venda.valorMaterial || '';
+            document.getElementById('nf').value = venda.nf || '';
+            document.getElementById('ov').value = venda.ov || '';
+
+            // Populate Cart
+            currentCart = venda.produto ? JSON.parse(JSON.stringify(venda.produto)) : [];
+            updateCartTable();
+
+            // Disable Everything
+            const fields = ['cliente', 'telefone', 'cidade', 'estado', 'vendedorSelect', 'timeSelect', 'data', 'placas', 'inversor', 'potencia', 'nf', 'ov']; // Valors are readonly anyway
+            fields.forEach(f => document.getElementById(f).disabled = true);
+
+            // Disable Cart Inputs
+            document.getElementById('itemProdutoSelect').disabled = true;
+            document.getElementById('itemQtd').disabled = true;
+            document.getElementById('itemValorVenda').disabled = true;
+            document.getElementById('itemCusto').disabled = true;
+            document.querySelector("button[onclick='addItemToCart()']").disabled = true;
+            
+            // Hide delete buttons in cart table (CSS or just JS rebuild)
+            const removeBtns = document.querySelectorAll("#cartTable button");
+            removeBtns.forEach(btn => btn.disabled = true);
+
+            // Toggle Buttons
+            document.getElementById('btnSalvarVenda').style.display = 'none';
+            document.getElementById('btnEditVenda').style.display = 'block';
+        }
+
+        function enableEdit() {
+            document.getElementById('modalVendaTitle').innerText = 'Editar Venda';
+            
+            const fields = ['cliente', 'telefone', 'cidade', 'estado', 'vendedorSelect', 'data', 'placas', 'inversor', 'potencia', 'nf', 'ov'];
+            fields.forEach(f => document.getElementById(f).disabled = false);
+
+            document.getElementById('itemProdutoSelect').disabled = false;
+            document.getElementById('itemQtd').disabled = false;
+            document.getElementById('itemValorVenda').disabled = false;
+            document.getElementById('itemCusto').disabled = false;
+            document.querySelector("button[onclick='addItemToCart()']").disabled = false;
+
+             // Enable delete buttons in cart
+            const removeBtns = document.querySelectorAll("#cartTable button");
+            removeBtns.forEach(btn => btn.disabled = false);
+
+            document.getElementById('btnSalvarVenda').style.display = 'block';
+            document.getElementById('btnEditVenda').style.display = 'none';
         }
         function closeModal() {
             document.getElementById('vendaModal').classList.remove('modal-active');
@@ -687,17 +900,25 @@
                 const tList = document.getElementById('timesList');
 
                 vSel.innerHTML = '<option value="">Selecione...</option>';
-                tSel.innerHTML = '<option value="">Selecione...</option>';
+                // tSel (Time) is now an input, handled automatically
                 vTimeSel.innerHTML = '<option value="">Sem Time</option>';
                 vList.innerHTML = '';
                 tList.innerHTML = '';
 
+                // Listen for Seller change to update Time
+                vSel.onchange = function() {
+                    const selName = this.value;
+                    const vendor = _CACHE_VENDEDORES.find(v => v.nome === selName);
+                    const tInput = document.getElementById('timeSelect');
+                    if (vendor && vendor.time) {
+                        tInput.value = vendor.time.nome;
+                    } else {
+                        tInput.value = '';
+                    }
+                };
+
                 times.forEach(t => {
-                    // Dropdown
-                    const opt = document.createElement('option');
-                    opt.value = t.nome;
-                    opt.innerText = t.nome;
-                    tSel.appendChild(opt);
+                    // Dropdown for Time - Removed (now automatic)
 
                     // Vendedor Modal Dropdown
                     const optV = document.createElement('option');
@@ -901,6 +1122,7 @@
                     
                     // pageData has: content, totalPages, number (currentPage), etc.
                     const vendas = pageData.content;
+                    _CACHE_CURRENT_PAGE_VENDAS = vendas; // Cache for click details
                     totalPages = pageData.totalPages;
                     currentPage = pageData.number;
 
@@ -919,8 +1141,10 @@
             const tbody = document.querySelector('#vendasTable tbody');
             tbody.innerHTML = '';
             
-            vendas.forEach(v => {
+            vendas.forEach((v, index) => {
                 const tr = document.createElement('tr');
+                tr.style.cursor = 'pointer';
+                tr.onclick = () => openVendaDetails(index);
                 tr.innerHTML = `
                     <td class="col-wide" title="${v.cliente || ''}">${v.cliente || ''}</td>
                     <td>${v.telefone || ''}</td>
@@ -957,10 +1181,15 @@
             next.disabled = (current >= total - 1);
         }
 
+        let currentCart = [];
+
         async function salvarVenda() {
             const status = document.getElementById('saveStatus');
+            const id = document.getElementById('vendaId').value;
+            
             // Basic gathering, could be improved with FormData
             const venda = {
+                id: id || null,
                 cliente: document.getElementById('cliente').value,
                 telefone: document.getElementById('telefone').value,
                 cidade: document.getElementById('cidade').value,
@@ -973,15 +1202,18 @@
                 potencia: document.getElementById('potencia').value,
                 valorVenda: document.getElementById('valorVenda').value || null,
                 valorMaterial: document.getElementById('valorMaterial').value || null,
-                produto: document.getElementById('produto').value,
+                produto: currentCart, // calculated items
                 nf: document.getElementById('nf').value,
                 ov: document.getElementById('ov').value
             };
 
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `/api/vendas/${id}` : '/api/vendas';
+
             try {
                 status.innerText = "Salvando...";
-                const response = await fetch('/api/vendas', {
-                    method: 'POST',
+                const response = await fetch(url, {
+                    method: method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(venda)
                 });
@@ -996,6 +1228,76 @@
             } catch(e) {
                 status.innerText = "Erro: " + e;
             }
+        }
+
+        // --- Cart Logic ---
+        function addItemToCart() {
+            const pSelect = document.getElementById('itemProdutoSelect');
+            const qtdInput = document.getElementById('itemQtd');
+            const vvInput = document.getElementById('itemValorVenda');
+            const vcInput = document.getElementById('itemCusto');
+
+            const pId = pSelect.value;
+            if(!pId) { alert('Selecione um produto'); return; }
+            
+            const pNome = pSelect.options[pSelect.selectedIndex].text;
+            const qtd = parseInt(qtdInput.value) || 0;
+            const vv = parseFloat(vvInput.value) || 0;
+            const vc = parseFloat(vcInput.value) || 0;
+
+            if(qtd <= 0) { alert('Quantidade inválida'); return; }
+
+            currentCart.push({
+                produtoId: pId,
+                nomeProduto: pNome,
+                quantidade: qtd,
+                valorUnitarioVenda: vv,
+                valorUnitarioCusto: vc
+            });
+
+            // Reset inputs
+            pSelect.value = '';
+            qtdInput.value = 1;
+            vvInput.value = '';
+            vcInput.value = '';
+
+            updateCartTable();
+        }
+
+        function removeItemFromCart(index) {
+            currentCart.splice(index, 1);
+            updateCartTable();
+        }
+
+        function updateCartTable() {
+            const tbody = document.querySelector('#cartTable tbody');
+            tbody.innerHTML = '';
+            
+            let totalV = 0;
+            let totalM = 0;
+
+            currentCart.forEach((item, idx) => {
+                const subTotalV = item.quantidade * item.valorUnitarioVenda;
+                const subTotalC = item.quantidade * item.valorUnitarioCusto;
+                
+                totalV += subTotalV;
+                totalM += subTotalC;
+
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
+                tr.innerHTML = `
+                    <td>${item.nomeProduto}</td>
+                    <td>${item.quantidade}</td>
+                    <td>${formatMoney(item.valorUnitarioVenda)}</td>
+                    <td>${formatMoney(item.valorUnitarioCusto)}</td>
+                    <td>${formatMoney(subTotalV)}</td>
+                    <td><button onclick="removeItemFromCart(${idx})" style="background:none; border:none; color:red; cursor:pointer;">&times;</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('valorVenda').value = totalV.toFixed(2);
+            document.getElementById('valorMaterial').value = totalM.toFixed(2);
         }
 
         async function uploadFile() {
@@ -1036,31 +1338,44 @@
                 if(!text) return; // No content
                 
                 const produtos = JSON.parse(text);
+                
+                // Populate Table
                 const tbody = document.querySelector('#produtosTable tbody');
                 tbody.innerHTML = '';
+                
+                // Populate Dropdown (Modal Venda)
+                const select = document.getElementById('itemProdutoSelect');
+                select.innerHTML = '<option value="">Selecione...</option>';
 
                 if(produtos.length === 0) {
                      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum produto cadastrado.</td></tr>';
-                     return;
-                }
+                     // return; // Don't return, keep select cleared
+                } else {
+                    produtos.forEach(p => {
+                        // Table
+                        const tr = document.createElement('tr');
+                        const safeDesc = p.descricao ? p.descricao.replace(/'/g, "\\'") : '';
+                        const safeGrupo = p.grupo ? p.grupo.replace(/'/g, "\\'") : '';
+                        const safeUnidade = p.unidade ? p.unidade.replace(/'/g, "\\'") : '';
+                        
+                        tr.innerHTML = `
+                            <td>${p.descricao || ''}</td>
+                            <td>${p.grupo || ''}</td>
+                            <td>${p.unidade || ''}</td>
+                            <td>
+                                <button class="btn btn-secondary" onclick="openProdutoModal(${p.id}, '${safeDesc}', '${safeGrupo}', '${safeUnidade}')" style="padding: 2px 8px; margin-right: 5px; font-size:12px;">✎</button>
+                                <button class="btn-delete" onclick="deleteProduto(${p.id})">&times;</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
 
-                produtos.forEach(p => {
-                    const tr = document.createElement('tr');
-                    const safeDesc = p.descricao ? p.descricao.replace(/'/g, "\\'") : '';
-                    const safeGrupo = p.grupo ? p.grupo.replace(/'/g, "\\'") : '';
-                    const safeUnidade = p.unidade ? p.unidade.replace(/'/g, "\\'") : '';
-                    
-                    tr.innerHTML = `
-                        <td>${p.descricao || ''}</td>
-                        <td>${p.grupo || ''}</td>
-                        <td>${p.unidade || ''}</td>
-                        <td>
-                            <button class="btn btn-secondary" onclick="openProdutoModal(${p.id}, '${safeDesc}', '${safeGrupo}', '${safeUnidade}')" style="padding: 2px 8px; margin-right: 5px; font-size:12px;">✎</button>
-                            <button class="btn-delete" onclick="deleteProduto(${p.id})">&times;</button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                        // Dropdown
+                        const opt = document.createElement('option');
+                        opt.value = p.id;
+                        opt.innerText = p.descricao;
+                        select.appendChild(opt);
+                    });
+                }
             } catch(e) { console.error("Erro ao carregar produtos", e); }
         }
 
@@ -1115,6 +1430,223 @@
                 await fetch(`/api/vendas/produtos/${id}`, { method: 'DELETE' });
                 loadProdutos();
             } catch(e) { alert('Erro ao excluir produto'); }
+        }
+
+        // --- DASHBOARDS ---
+        let chartMensalInstance = null;
+        let chartVendedoresInstance = null;
+        let chartTimesPieInstance = null;
+        let chartTimesLineInstance = null;
+
+        async function loadDashboards() {
+            const inicio = document.getElementById('dashDataInicio').value;
+            const fim = document.getElementById('dashDataFim').value;
+            
+            let queryString = '';
+            const params = [];
+            if (inicio) params.push(`inicio=${inicio}`);
+            if (fim) params.push(`fim=${fim}`);
+            if (params.length > 0) queryString = '?' + params.join('&');
+
+            try {
+                const [mensal, vendedores, times, timesMensal] = await Promise.all([
+                    fetch(`/api/vendas/dashboard/mensal${queryString}`).then(r => r.json()),
+                    fetch(`/api/vendas/dashboard/vendedores${queryString}`).then(r => r.json()),
+                    fetch(`/api/vendas/dashboard/times${queryString}`).then(r => r.json()),
+                    fetch(`/api/vendas/dashboard/times-mensal${queryString}`).then(r => r.json())
+                ]);
+
+                renderChartMensal(mensal);
+                renderChartVendedores(vendedores);
+                renderChartTimesPie(times);
+                renderChartTimesLine(timesMensal);
+                calculateTotalPeriodo(mensal);
+            } catch(e) { console.error("Erro ao carregar dashboards", e); }
+        }
+
+        function clearDashFilters() {
+            document.getElementById('dashDataInicio').value = '';
+            document.getElementById('dashDataFim').value = '';
+            loadDashboards();
+        }
+
+        function calculateTotalPeriodo(data) {
+            let total = 0;
+            if (data && Array.isArray(data)) {
+                total = data.reduce((acc, item) => acc + (item[1] || 0), 0);
+            }
+            document.getElementById('dashTotalPeriodo').innerText = 
+                total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function renderChartMensal(data) {
+            const ctx = document.getElementById('chartMensal').getContext('2d');
+            const labels = data.map(item => item[0]);
+            const values = data.map(item => item[1]);
+
+            if (chartMensalInstance) chartMensalInstance.destroy();
+
+            chartMensalInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total de Vendas (R$)',
+                        data: values,
+                        backgroundColor: 'rgba(0, 120, 212, 0.2)',
+                        borderColor: '#0078d4',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#e0e1dd' } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#e0e1dd' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                        y: { 
+                            ticks: { color: '#e0e1dd', callback: (val) => 'R$ ' + val }, 
+                            grid: { color: 'rgba(255,255,255,0.1)' } 
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderChartVendedores(data) {
+            // Data comes as [ ["Name", 1500.0], ["Name2", 500.0] ] ordered DESC
+            let finalLabels = [];
+            let finalValues = [];
+
+            if (data.length <= 10) {
+                finalLabels = data.map(d => d[0]);
+                finalValues = data.map(d => d[1]);
+            } else {
+                const top9 = data.slice(0, 9);
+                const rest = data.slice(9);
+                
+                finalLabels = top9.map(d => d[0]);
+                finalValues = top9.map(d => d[1]);
+
+                const sumRest = rest.reduce((acc, curr) => acc + curr[1], 0);
+                finalLabels.push('Outros');
+                finalValues.push(sumRest);
+            }
+
+            const ctx = document.getElementById('chartVendedores').getContext('2d');
+            if (chartVendedoresInstance) chartVendedoresInstance.destroy();
+
+            // Generate colors
+            const colors = [
+                '#0078d4', '#00bcf2', '#009e49', '#ff8c00', '#e81123',
+                '#881798', '#5c2d91', '#e3008c', '#bf0077', '#744da9'
+            ];
+
+            chartVendedoresInstance = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: finalLabels,
+                    datasets: [{
+                        data: finalValues,
+                        backgroundColor: colors.slice(0, finalLabels.length),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#e0e1dd' } }
+                    }
+                }
+            });
+        }
+
+        function renderChartTimesPie(data) {
+            // Data: [ ["TeamName", 1500.0], ... ]
+            const ctx = document.getElementById('chartTimesPie').getContext('2d');
+            if (chartTimesPieInstance) chartTimesPieInstance.destroy();
+
+            const labels = data.map(d => d[0] || 'Sem Time');
+            const values = data.map(d => d[1]);
+
+            // Simple colors
+            const colors = ['#0078d4', '#e81123', '#00bcf2', '#ff8c00', '#2d7d9a', '#b4009e', '#107c10'];
+
+            chartTimesPieInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#e0e1dd' } }
+                    }
+                }
+            });
+        }
+
+        function renderChartTimesLine(data) {
+            // Data: [ ["2023-01", "TeamA", 100], ["2023-01", "TeamB", 200] ]
+            const ctx = document.getElementById('chartTimesLine').getContext('2d');
+            if (chartTimesLineInstance) chartTimesLineInstance.destroy();
+
+            // Extract unique months and teams
+            const months = [...new Set(data.map(d => d[0]))]; // Sorted by query
+            const teams = [...new Set(data.map(d => d[1] || 'Sem Time'))];
+
+            const colors = ['#0078d4', '#e81123', '#009e49', '#ff8c00', '#881798', '#00bcf2'];
+
+            // Build datasets
+            const datasets = teams.map((team, index) => {
+                const teamData = [];
+                months.forEach(month => {
+                    const found = data.find(d => d[0] === month && (d[1] || 'Sem Time') === team);
+                    teamData.push(found ? found[2] : 0);
+                });
+
+                return {
+                    label: team,
+                    data: teamData,
+                    borderColor: colors[index % colors.length],
+                    backgroundColor: colors[index % colors.length],
+                    tension: 0.3,
+                    fill: false
+                };
+            });
+
+            chartTimesLineInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#e0e1dd' } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#e0e1dd' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                        y: { 
+                            ticks: { color: '#e0e1dd', callback: (val) => 'R$ ' + val }, 
+                            grid: { color: 'rgba(255,255,255,0.1)' } 
+                        }
+                    }
+                }
+            });
         }
     </script>
 </body>

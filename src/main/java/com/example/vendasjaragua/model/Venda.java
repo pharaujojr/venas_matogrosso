@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.ArrayList;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "vendas_jaragua")
@@ -28,7 +32,7 @@ public class Venda {
 
     private String placas;
     private String inversor;
-    private String potencia; // String or number? Assuming String to be safe with formats like "5kWp", or Double. User said "POTÊNCIA". Let's stick to String to avoid parsing errors on import unless it's strictly numeric.
+    private String potencia; 
 
     @Column(name = "valor_venda")
     private BigDecimal valorVenda;
@@ -36,8 +40,27 @@ public class Venda {
     @Column(name = "valor_material")
     private BigDecimal valorMaterial;
 
-    private String produto;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<VendaItem> produto; // Kept name 'produto' as requested, but now it is a List
+
     private String time;
+
+    @PrePersist
+    @PreUpdate
+    public void calculateTotals() {
+        if (produto != null && !produto.isEmpty()) {
+            this.valorVenda = produto.stream()
+                .filter(i -> i.getValorUnitarioVenda() != null && i.getQuantidade() != null)
+                .map(i -> i.getValorUnitarioVenda().multiply(BigDecimal.valueOf(i.getQuantidade())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            this.valorMaterial = produto.stream()
+                .filter(i -> i.getValorUnitarioCusto() != null && i.getQuantidade() != null)
+                .map(i -> i.getValorUnitarioCusto().multiply(BigDecimal.valueOf(i.getQuantidade())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        }
+    }
 
     public BigDecimal getValorBruto() {
         if (valorVenda != null && valorMaterial != null) {

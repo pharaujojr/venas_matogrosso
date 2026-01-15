@@ -6,13 +6,27 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Repository
 public interface VendaRepository extends JpaRepository<Venda, Long> {
+
+    @Query("SELECT function('to_char', v.data, 'YYYY-MM') as mes, SUM(v.valorVenda) FROM Venda v WHERE v.data BETWEEN :inicio AND :fim GROUP BY function('to_char', v.data, 'YYYY-MM') ORDER BY mes")
+    List<Object[]> findVendasPorMes(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
+
+    @Query("SELECT v.vendedor, SUM(v.valorVenda) FROM Venda v WHERE v.data BETWEEN :inicio AND :fim GROUP BY v.vendedor ORDER BY SUM(v.valorVenda) DESC")
+    List<Object[]> findVendasPorVendedor(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
+
+    @Query("SELECT v.time, SUM(v.valorVenda) FROM Venda v WHERE v.data BETWEEN :inicio AND :fim GROUP BY v.time ORDER BY SUM(v.valorVenda) DESC")
+    List<Object[]> findVendasPorTime(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
+
+    @Query("SELECT function('to_char', v.data, 'YYYY-MM') as mes, v.time, SUM(v.valorVenda) FROM Venda v WHERE v.data BETWEEN :inicio AND :fim GROUP BY function('to_char', v.data, 'YYYY-MM'), v.time ORDER BY mes")
+    List<Object[]> findEvolucaoVendasPorTime(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
 
     @Modifying
     @Transactional
