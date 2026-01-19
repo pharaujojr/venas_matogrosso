@@ -314,9 +314,16 @@ public class ExcelService {
                     if (cellValue.getCellType() == CellType.NUMERIC) {
                         return cellValue.getNumberValue();
                     }
-                    // If formula returns string, let DataFormatter handle it below or parse directly
                 } catch (Exception e) {
-                   // Fallback to cached value or raw string
+                   // Fallback to cached value if formula evaluation fails
+                   logger.warn("Formula evaluation failed at row {}: {}. Using cached value.", cell.getRowIndex(), e.getMessage());
+                   try {
+                       if (cell.getCachedFormulaResultType() == CellType.NUMERIC) {
+                           return cell.getNumericCellValue();
+                       }
+                   } catch (Exception ex) {
+                       // ignore
+                   }
                 }
             }
 
