@@ -52,6 +52,7 @@ public class ExcelService {
     public List<Venda> parseExcelFile(InputStream is) {
         try {
             Workbook workbook = new XSSFWorkbook(is);
+            FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
             Sheet sheet = workbook.getSheetAt(0); // Assume first sheet
             List<Venda> vendas = new ArrayList<>();
 
@@ -93,18 +94,19 @@ public class ExcelService {
                 // Log raw values for debug
                 Cell cellVal = row.getCell(12);
                 Cell cellMat = row.getCell(13);
-                logger.info("Row {}: Col 12 (Venda) Type={}, Raw={}; Col 13 (Mat) Type={}, Raw={}", 
-                    rowIndex, 
-                    cellVal != null ? cellVal.getCellType() : "NULL",
-                    cellVal,
-                    cellMat != null ? cellMat.getCellType() : "NULL",
-                    cellMat
-                );
+                
+                if (rowIndex <= 10) { // Log only first 10 rows to avoid spam
+                     logger.info("Row {}: Col 12 (Venda) Type={}; Col 13 (Mat) Type={}", 
+                        rowIndex, 
+                        cellVal != null ? cellVal.getCellType() : "NULL",
+                        cellMat != null ? cellMat.getCellType() : "NULL"
+                    );
+                }
 
-                BigDecimal valorVenda = getBigDecimalValue(cellVal);
+                BigDecimal valorVenda = getBigDecimalValue(cellVal, evaluator);
                 venda.setValorVenda(valorVenda);
-                BigDecimal valorMaterial = getBigDecimalValue(cellMat);
-                venda.setValorMaterial(valorMaterial); // FIXED: was using raw cell 13 again without var
+                BigDecimal valorMaterial = getBigDecimalValue(cellMat, evaluator);
+                venda.setValorMaterial(valorMaterial); 
                 // campos calculados automaticamente pelo modelo: row.getCell(14) e (15) sao ignorados.
                 
                 String rawProduto = getStringValue(row.getCell(16));
@@ -121,7 +123,8 @@ public class ExcelService {
                     itemNaoEspecificado.setNomeProduto("Não Especificado");
                     itemNaoEspecificado.setQuantidade(1);
                     itemNaoEspecificado.setValorUnitarioVenda(valorVenda != null ? valorVenda : BigDecimal.ZERO);
-                    itemNaoEspecificado.setValorUnitarioCusto(BigDecimal.ZERO);
+                    // Use the parsed material value (Column N/13) for the cost
+                    itemNaoEspecificado.setValorUnitarioCusto(valorMaterial != null ? valorMaterial : BigDecimal.ZERO);
                     venda.setProduto(new ArrayList<>(Collections.singletonList(itemNaoEspecificado)));
                 }
                 
@@ -298,49 +301,67 @@ public class ExcelService {
         }
     }
 
-    private Double getDoubleValue(Cell cell) {
+    private Double getDoubleValue(Cell cell, FormulaEvaluator evaluator) {
         if (cell == null) return 0.0;
         try {
-            CellType type = cell.getCellType();
+            // Use DataFormatter for consistent string representation (handles formulas too mostly)
+            DataFormatter formatter = new DataFormatter(new java.util.Locale("pt", "BR"));
             
-            if (type == CellType.FORMULA) {
-                type = cell.getCachedFormulaResultType();
+            // Try to evaluate formula first if present
+            if (cell.getCellType() == CellType.FORMULA) {
+                try {
+                    CellValue cellValue = evaluator.evaluate(cell);
+                    if (cellValue.getCellType() == CellType.NUMERIC) {
+                        return cellValue.getNumberValue();
+                    }
+                    // If formula returns string, let DataFormatter handle it below or parse directly
+                } catch (Exception e) {
+                   // Fallback to cached value or raw string
+                }
             }
 
-            if (type == CellType.NUMERIC) {
+            // For numeric cells, return directly to avoid string parsing issues
+             if (cell.getCellType() == CellType.NUMERIC && !DateUtil.isCellDateFormatted(cell)) {
                 return cell.getNumericCellValue();
-            } else if (type == CellType.STRING) {
-                 try {
-                     String val = cell.getStringCellValue();
-                     if (val == null || val.trim().isEmpty()) return 0.0;
-                     
-                     // Regex to keep only digits, minus sign and comma
-                     // This assumes Brazilian format where '.' is thousand separator and ',' is decimal
-                     val = val.replaceAll("[^0-9,-]", ""); 
-                     
-                     if (val.isEmpty() || val.equals("-")) return 0.0;
-                     
-                     // Replace decimal comma with dot for Java parsing
-                     val = val.replace(",", ".");
-                     
-                     return Double.parseDouble(val);
-                 } catch (NumberFormatException e) {
-                     logger.warn("Failed to parse string value: '{}'", cell.getStringCellValue());
-                     return 0.0;
-                 }
-            } else {
-                logger.warn("Cell type ignored: {}", type);
             }
-            return 0.0;
+
+            String strVal = formatter.formatCellValue(cell, evaluator);
+            return parseStringValue(strVal);
+            
         } catch (Exception e) {
             logger.error("Error getting double value from cell", e);
             return 0.0;
         }
     }
+    
+    private Double parseStringValue(String val) {
+         try {
+             if (val == null || val.trim().isEmpty()) return 0.0;
+             
+             // Regex to keep only digits, minus sign and comma
+             // This assumes Brazilian format where '.' is thousand separator and ',' is decimal
+             val = val.replaceAll("[^0-9,-]", ""); 
+             
+             if (val.isEmpty() || val.equals("-")) return 0.0;
+             
+             // Replace decimal comma with dot for Java parsing
+             val = val.replace(",", ".");
+             
+             return Double.parseDouble(val);
+         } catch (NumberFormatException e) {
+             logger.warn("Failed to parse string value: '{}'", val);
+             return 0.0;
+         }
+    }
 
-    private BigDecimal getBigDecimalValue(Cell cell) {
-        Double val = getDoubleValue(cell);
+    private BigDecimal getBigDecimalValue(Cell cell, FormulaEvaluator evaluator) {
+        Double val = getDoubleValue(cell, evaluator);
         return val != null ? BigDecimal.valueOf(val) : BigDecimal.ZERO;
+    }
+    
+    private BigDecimal getBigDecimalValue(Cell cell) {
+         // Helper for compatibility if needed, but we should use the one with evaluator
+         return getBigDecimalValue(cell, null); // Will crash if not updated everywhere? No, handled above.
     }
 
     private java.time.LocalDate getDateValue(Cell cell) {
