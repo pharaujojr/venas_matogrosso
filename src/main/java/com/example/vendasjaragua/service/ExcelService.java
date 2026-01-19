@@ -114,8 +114,9 @@ public class ExcelService {
                     VendaItem item = new VendaItem();
                     item.setNomeProduto(rawProduto);
                     item.setQuantidade(1);
-                    item.setValorUnitarioVenda(BigDecimal.ZERO); // Valor desconhecido na importação simples
-                    item.setValorUnitarioCusto(BigDecimal.ZERO);
+                    // Use the values from columns 12 and 13 as the unit values for the product
+                    item.setValorUnitarioVenda(valorVenda != null ? valorVenda : BigDecimal.ZERO);
+                    item.setValorUnitarioCusto(valorMaterial != null ? valorMaterial : BigDecimal.ZERO);
                     venda.setProduto(new ArrayList<>(Collections.singletonList(item)));
                 } else {
                     // Se não há produto detalhado, cria um item "Não Especificado" com o valor total
@@ -304,27 +305,29 @@ public class ExcelService {
     private Double getDoubleValue(Cell cell, FormulaEvaluator evaluator) {
         if (cell == null) return 0.0;
         try {
-            // Use DataFormatter for consistent string representation (handles formulas too mostly)
-            DataFormatter formatter = new DataFormatter(new java.util.Locale("pt", "BR"));
-            
-            // Try to evaluate formula first if present
+            // First: If it's a formula, try to get the pre-calculated (cached) value if evaluation fails or returns error
             if (cell.getCellType() == CellType.FORMULA) {
                 try {
+                    // Start by assuming we might want the cached value if evaluation is tricky
+                    // But usually we try evaluate first.
                     CellValue cellValue = evaluator.evaluate(cell);
+                    
                     if (cellValue.getCellType() == CellType.NUMERIC) {
                         return cellValue.getNumberValue();
                     }
+                    if (cellValue.getCellType() == CellType.ERROR) {
+                        // Evaluation calculated an error (e.g. #DIV/0!), fallback to cached if valid
+                         if (cell.getCachedFormulaResultType() == CellType.NUMERIC) {
+                             return cell.getNumericCellValue();
+                         }
+                    }
                 } catch (Exception e) {
-                   // Fallback to cached value if formula evaluation fails
-                   logger.warn("Formula evaluation failed at row {}: {}. Using cached value.", cell.getRowIndex(), e.getMessage());
-                   try {
-                       if (cell.getCachedFormulaResultType() == CellType.NUMERIC) {
-                           return cell.getNumericCellValue();
-                       }
-                   } catch (Exception ex) {
-                       // ignore
+                   // Evaluation failed (e.g. unsupported function), strictly fallback to cached
+                   if (cell.getCachedFormulaResultType() == CellType.NUMERIC) {
+                        return cell.getNumericCellValue();
                    }
                 }
+                // If evaluation resulted in string or failed all above, continue to formatter
             }
 
             // For numeric cells, return directly to avoid string parsing issues
@@ -332,10 +335,19 @@ public class ExcelService {
                 return cell.getNumericCellValue();
             }
 
-            String strVal = formatter.formatCellValue(cell, evaluator);
+            // Last resort: String parsing (handles currency "R$ 1.000,00" etc)
+            DataFormatter formatter = new DataFormatter(new java.util.Locale("pt", "BR"));
+            // Note: passing evaluator here might cause re-evaluation of formula. 
+            // If we are here, formula evaluation might have been weird.
+            String strVal = formatter.formatCellValue(cell, evaluator); 
             return parseStringValue(strVal);
             
         } catch (Exception e) {
+            // Final safety net: try to get numeric value directly if possible
+            if (cell.getCellType() == CellType.NUMERIC || 
+               (cell.getCellType() == CellType.FORMULA && cell.getCachedFormulaResultType() == CellType.NUMERIC)) {
+                return cell.getNumericCellValue();
+            }
             logger.error("Error getting double value from cell", e);
             return 0.0;
         }
