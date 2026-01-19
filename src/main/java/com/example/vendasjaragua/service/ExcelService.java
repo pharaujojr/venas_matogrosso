@@ -109,29 +109,22 @@ public class ExcelService {
                 venda.setValorMaterial(valorMaterial); 
                 // campos calculados automaticamente pelo modelo: row.getCell(14) e (15) sao ignorados.
                 
-                String rawProduto = getStringValue(row.getCell(16));
-                if (rawProduto != null && !rawProduto.trim().isEmpty()) {
-                    VendaItem item = new VendaItem();
-                    item.setNomeProduto(rawProduto);
-                    item.setQuantidade(1);
-                    // Use the values from columns 12 and 13 as the unit values for the product
-                    item.setValorUnitarioVenda(valorVenda != null ? valorVenda : BigDecimal.ZERO);
-                    item.setValorUnitarioCusto(valorMaterial != null ? valorMaterial : BigDecimal.ZERO);
-                    venda.setProduto(new ArrayList<>(Collections.singletonList(item)));
-                } else {
-                    // Se não há produto detalhado, cria um item "Não Especificado" com o valor total
-                    VendaItem itemNaoEspecificado = new VendaItem();
-                    itemNaoEspecificado.setNomeProduto("Não Especificado");
-                    itemNaoEspecificado.setQuantidade(1);
-                    itemNaoEspecificado.setValorUnitarioVenda(valorVenda != null ? valorVenda : BigDecimal.ZERO);
-                    // Use the parsed material value (Column N/13) for the cost
-                    itemNaoEspecificado.setValorUnitarioCusto(valorMaterial != null ? valorMaterial : BigDecimal.ZERO);
-                    venda.setProduto(new ArrayList<>(Collections.singletonList(itemNaoEspecificado)));
-                }
+                // Conforme solicitado, ignoramos a col 16 (Nome do produto) e usamos sempre "Não Especificado"
+                // para garantir consistência e evitar problemas de agrupamento ou dados sujos.
+                VendaItem itemNaoEspecificado = new VendaItem();
+                itemNaoEspecificado.setNomeProduto("Não Especificado");
+                itemNaoEspecificado.setQuantidade(1);
+                
+                // Use os valores das colunas 12 e 13 para Venda e Custo
+                itemNaoEspecificado.setValorUnitarioVenda(valorVenda != null ? valorVenda : BigDecimal.ZERO);
+                itemNaoEspecificado.setValorUnitarioCusto(valorMaterial != null ? valorMaterial : BigDecimal.ZERO);
+                
+                venda.setProduto(new ArrayList<>(Collections.singletonList(itemNaoEspecificado)));
                 
                 venda.setInverterInfo(new ArrayList<>()); // Initialize with empty list as requested
 
-                venda.setTime(getStringValue(row.getCell(17)));
+                String rawTime = getStringValue(row.getCell(17));
+                venda.setTime(rawTime.isEmpty() ? null : rawTime);
 
                 vendas.add(venda);
                 rowIndex++;
@@ -291,12 +284,14 @@ public class ExcelService {
     private String getStringValue(Cell cell) {
         if (cell == null) return "";
         try {
+            String value = "";
             switch (cell.getCellType()) {
-                case STRING: return cell.getStringCellValue();
-                case NUMERIC: return String.valueOf((long) cell.getNumericCellValue()); // integer string mostly
-                case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
-                default: return "";
+                case STRING: value = cell.getStringCellValue(); break;
+                case NUMERIC: value = String.valueOf((long) cell.getNumericCellValue()); break;
+                case BOOLEAN: value = String.valueOf(cell.getBooleanCellValue()); break;
+                default: value = "";
             }
+            return value != null ? value.trim() : "";
         } catch (Exception e) {
             return "";
         }

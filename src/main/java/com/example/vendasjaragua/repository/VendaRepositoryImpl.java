@@ -25,7 +25,8 @@ public class VendaRepositoryImpl implements VendaRepositoryCustom {
             List<String> produtos) {
         
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT COALESCE(p.grupo, 'Não Especificado') as grupo, ");
+        // Use TRIM and NULLIF to handle empty strings and whitespace being treated differently than NULL
+        sql.append("SELECT COALESCE(NULLIF(TRIM(p.grupo), ''), 'Não Especificado') as grupo, ");
         sql.append("SUM(CAST(COALESCE(NULLIF(item->>'valorUnitarioVenda', ''), '0') AS NUMERIC) * ");
         sql.append("CAST(COALESCE(NULLIF(item->>'quantidade', ''), '0') AS INTEGER)) as total ");
         sql.append("FROM vendas_jaragua v ");
