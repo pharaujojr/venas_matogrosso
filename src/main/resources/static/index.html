@@ -782,6 +782,7 @@
             </div>
             
             <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn" id="btnExcluirVenda" onclick="confirmarExclusaoVenda()" style="display:none; background-color: #d90429; margin-right: auto;">Excluir</button>
                 <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
                 <button class="btn" id="btnEditVenda" onclick="enableEdit()" style="display:none; background-color: var(--accent);">Editar</button>
                 <button class="btn" id="btnSalvarVenda" onclick="salvarVenda()">Salvar</button>
@@ -1080,9 +1081,10 @@
             document.getElementById('saveStatus').innerText = '';
             document.getElementById('vendaId').value = ''; // Reset ID
             
-            // Show Save, Hide Edit
+            // Show Save, Hide Edit, Hide Delete
             document.getElementById('btnSalvarVenda').style.display = 'block';
             document.getElementById('btnEditVenda').style.display = 'none';
+            document.getElementById('btnExcluirVenda').style.display = 'none';
 
             // Reset fields
             // Removed 'inversor' from fields logic, handled via List now.
@@ -1190,6 +1192,7 @@
             // Toggle Buttons
             document.getElementById('btnSalvarVenda').style.display = 'none';
             document.getElementById('btnEditVenda').style.display = 'block';
+            document.getElementById('btnExcluirVenda').style.display = 'block';
         }
 
         function enableEdit() {
@@ -1731,6 +1734,36 @@
         }
 
         let currentCart = [];
+
+        async function confirmarExclusaoVenda() {
+            const id = document.getElementById('vendaId').value;
+            if (!id) return;
+
+            // Prompt user for confirmation phrase
+            const confirmation = prompt("ATENÇÃO: A exclusão é permanente.\nDigite 'DELETAR' para confirmar a exclusão desta venda.");
+            
+            if (confirmation === 'DELETAR') {
+                try {
+                    const response = await fetch(`/api/vendas/${id}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        alert('Venda excluída com sucesso!');
+                        closeModal();
+                        filtrarVendas(); // Refresh list
+                    } else {
+                        alert('Erro ao excluir venda. Tente novamente.');
+                        console.error('Delete failed:', response.status);
+                    }
+                } catch (error) {
+                    alert('Erro de conexão ao excluir venda.');
+                    console.error(error);
+                }
+            } else if (confirmation !== null) {
+                alert('Frase de confirmação incorreta. A venda NÃO foi excluída.');
+            }
+        }
 
         async function salvarVenda() {
             const status = document.getElementById('saveStatus');

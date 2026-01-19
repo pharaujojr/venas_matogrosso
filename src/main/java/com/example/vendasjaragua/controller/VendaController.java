@@ -49,6 +49,20 @@ public class VendaController {
         }
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteVenda(@PathVariable Long id) {
+        try {
+            if (vendaRepository.existsById(id)) {
+                vendaRepository.deleteById(id);
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            } else {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<Venda> updateVenda(@PathVariable Long id, @RequestBody Venda venda) {
         if (!vendaRepository.existsById(id)) {
