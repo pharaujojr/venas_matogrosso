@@ -277,11 +277,13 @@ public class VendaController {
     }
 
     @GetMapping("/dashboard/mensal")
-    public ResponseEntity<List<Object[]>> getDashboardMensal(
+    public ResponseEntity<List<java.util.Map<String, Object>>> getDashboardMensal(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim,
             @RequestParam(required = false) List<String> times,
-            @RequestParam(required = false) List<String> vendedores
+            @RequestParam(required = false) List<String> vendedores,
+            @RequestParam(required = false) List<String> grupos,
+            @RequestParam(required = false) List<String> produtos
     ) {
         if (inicio == null) inicio = LocalDate.of(2000, 1, 1);
         if (fim == null) fim = LocalDate.now().plusYears(100);
@@ -289,18 +291,52 @@ public class VendaController {
         // Handle empty lists if Spring passes them as empty instead of null
         if (times != null && times.isEmpty()) times = null;
         if (vendedores != null && vendedores.isEmpty()) vendedores = null;
+        if (grupos != null && grupos.isEmpty()) grupos = null;
+        if (produtos != null && produtos.isEmpty()) produtos = null;
 
-        return new ResponseEntity<>(vendaRepository.findVendasPorMes(inicio, fim, times, vendedores), HttpStatus.OK);
+        return new ResponseEntity<>(vendaRepository.findVendasPorMes(inicio, fim, times, vendedores, grupos, produtos), HttpStatus.OK);
     }
 
     @GetMapping("/dashboard/vendedores")
-    public ResponseEntity<List<Object[]>> getDashboardVendedores(
+    public ResponseEntity<List<java.util.Map<String, Object>>> getDashboardVendedores(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim,
+            @RequestParam(required = false) List<String> times,
+            @RequestParam(required = false) List<String> vendedores,
+            @RequestParam(required = false) List<String> grupos,
+            @RequestParam(required = false) List<String> produtos
     ) {
         if (inicio == null) inicio = LocalDate.of(2000, 1, 1);
         if (fim == null) fim = LocalDate.now().plusYears(100);
-        return new ResponseEntity<>(vendaRepository.findVendasPorVendedor(inicio, fim), HttpStatus.OK);
+        
+        if (times != null && times.isEmpty()) times = null;
+        if (vendedores != null && vendedores.isEmpty()) vendedores = null;
+        if (grupos != null && grupos.isEmpty()) grupos = null;
+        if (produtos != null && produtos.isEmpty()) produtos = null;
+
+        return new ResponseEntity<>(vendaRepository.findVendasPorVendedorDynamic(inicio, fim, times, vendedores, grupos, produtos), HttpStatus.OK);
+    }
+
+    @GetMapping("/dashboard/produtos")
+    public ResponseEntity<List<java.util.Map<String, Object>>> getDashboardProdutos(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim,
+            @RequestParam(required = false) List<String> times,
+            @RequestParam(required = false) List<String> vendedores,
+            @RequestParam(required = false) List<String> grupos,
+            @RequestParam(required = false) List<String> produtos
+    ) {
+        if (inicio == null) inicio = LocalDate.of(2000, 1, 1);
+        if (fim == null) fim = LocalDate.now().plusYears(100);
+
+        // Use dynamic query directly without dummy list workaround
+        return new ResponseEntity<>(vendaRepository.findFaturamentoPorGrupoDynamic(
+            inicio, fim, 
+            times, 
+            vendedores, 
+            grupos, 
+            produtos
+        ), HttpStatus.OK);
     }
 
     @GetMapping("/dashboard/times")
@@ -336,6 +372,47 @@ public class VendaController {
              return new ResponseEntity<>(vendaRepository.findVendasPorVendedorWhereTimeIsNull(inicio, fim), HttpStatus.OK);
         }
         return new ResponseEntity<>(vendaRepository.findVendasPorVendedorAndTime(time, inicio, fim), HttpStatus.OK);
+    }
+
+    @GetMapping("/dashboard/vendedores-unicos")
+    public ResponseEntity<List<String>> getVendedoresUnicos() {
+        return new ResponseEntity<>(vendaRepository.findVendedoresUnicos(), HttpStatus.OK);
+    }
+
+    @GetMapping("/dashboard/stats")
+    public ResponseEntity<java.util.Map<String, Object>> getDashboardStats(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim,
+            @RequestParam(required = false) List<String> times,
+            @RequestParam(required = false) List<String> vendedores,
+            @RequestParam(required = false) List<String> grupos,
+            @RequestParam(required = false) List<String> produtos
+    ) {
+        if (inicio == null) inicio = LocalDate.of(2000, 1, 1);
+        if (fim == null) fim = LocalDate.now().plusYears(100);
+        
+        // Handle empty lists
+        if (times != null && times.isEmpty()) times = null;
+        if (vendedores != null && vendedores.isEmpty()) vendedores = null;
+        if (grupos != null && grupos.isEmpty()) grupos = null;
+        if (produtos != null && produtos.isEmpty()) produtos = null;
+
+        List<java.util.Map<String, Object>> mensal = vendaRepository.findVendasPorMes(inicio, fim, times, vendedores, grupos, produtos);
+        
+        double total = mensal.stream()
+            .mapToDouble(row -> ((Number) row.get("total")).doubleValue())
+            .sum();
+        
+        long count = vendaRepository.countVendasFiltradas(inicio, fim, times, vendedores, grupos, produtos);
+        
+        double ticketMedio = count > 0 ? total / count : 0;
+        
+        java.util.Map<String, Object> stats = new java.util.HashMap<>();
+        stats.put("total", total);
+        stats.put("quantidade", count);
+        stats.put("ticketMedio", ticketMedio);
+        
+        return new ResponseEntity<>(stats, HttpStatus.OK);
     }
 }
 

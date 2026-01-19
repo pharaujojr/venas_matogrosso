@@ -357,6 +357,16 @@
             margin-left: 8px;
             color: var(--accent);
         }
+        .ms-search {
+            width: 100%;
+            padding: 8px;
+            background: rgba(0,0,0,0.3);
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            color: #fff;
+            font-size: 0.9em;
+            outline: none;
+        }
         .multiselect-body {
             display: none;
             position: absolute;
@@ -540,20 +550,65 @@
         <div id="tab-dashboards" class="tab-content">
             
             <!-- Filters & Stats -->
-            <div style="background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 15px; border: 1px solid var(--border-color);">
-                <div class="form-group" style="margin:0; min-width: 150px;">
-                    <label>De:</label>
-                    <input type="date" id="dashDataInicio" onchange="loadDashboards()">
-                </div>
-                <div class="form-group" style="margin:0; min-width: 150px;">
-                    <label>Até:</label>
-                    <input type="date" id="dashDataFim" onchange="loadDashboards()">
-                </div>
-                <button class="btn btn-secondary" onclick="clearDashFilters()" style="margin-bottom: 2px;">Limpar</button>
-
-                <div style="margin-left: auto; text-align: right;">
-                    <small style="color: var(--accent); display: block;">TOTAL NO PERÍODO</small>
-                    <span id="dashTotalPeriodo" style="font-size: 1.8em; font-weight: bold; color: #00bcf2;">R$ 0,00</span>
+            <div style="background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-color);">
+                <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 15px; margin-bottom: 15px;">
+                    <div class="form-group" style="margin:0; min-width: 150px;">
+                        <label>De:</label>
+                        <input type="date" id="dashDataInicio" onchange="loadDashboards()">
+                    </div>
+                    <div class="form-group" style="margin:0; min-width: 150px;">
+                        <label>Até:</label>
+                        <input type="date" id="dashDataFim" onchange="loadDashboards()">
+                    </div>
+                    <div class="form-group" style="margin:0; min-width: 180px;">
+                        <label>Times:</label>
+                        <div class="multiselect" id="msTimesGlobal">
+                            <div class="multiselect-head" onclick="toggleMs('msTimesGlobalBody')">Todos</div>
+                            <div class="multiselect-body" id="msTimesGlobalBody">
+                                <input type="text" class="ms-search" placeholder="Buscar..." onkeyup="filterMs('msTimesGlobalBody', this.value)" onclick="event.stopPropagation()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin:0; min-width: 180px;">
+                        <label>Vendedores:</label>
+                        <div class="multiselect" id="msVensGlobal">
+                            <div class="multiselect-head" onclick="toggleMs('msVensGlobalBody')">Todos</div>
+                            <div class="multiselect-body" id="msVensGlobalBody">
+                                <input type="text" class="ms-search" placeholder="Buscar..." onkeyup="filterMs('msVensGlobalBody', this.value)" onclick="event.stopPropagation()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin:0; min-width: 180px;">
+                        <label>Grupos:</label>
+                        <div class="multiselect" id="msGrupos">
+                            <div class="multiselect-head" onclick="toggleMs('msGruposBody')">Todos</div>
+                            <div class="multiselect-body" id="msGruposBody">
+                                <input type="text" class="ms-search" placeholder="Buscar..." onkeyup="filterMs('msGruposBody', this.value)" onclick="event.stopPropagation()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin:0; min-width: 180px;">
+                        <label>Produtos:</label>
+                        <div class="multiselect" id="msProds">
+                            <div class="multiselect-head" onclick="toggleMs('msProdsBody')">Todos</div>
+                            <div class="multiselect-body" id="msProdsBody">
+                                <input type="text" class="ms-search" placeholder="Buscar..." onkeyup="filterMs('msProdsBody', this.value)" onclick="event.stopPropagation()">
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="clearDashFilters()" style="margin-bottom: 2px;">Limpar</button>
+                    <div style="margin-left: auto; display: flex; gap: 30px; text-align: right;">
+                        <div>
+                            <small style="color: var(--accent); display: block;">TICKET MÉDIO</small>
+                            <small style="color: var(--accent); font-size: 0.75em;">(Filtros aplicados)</small>
+                            <span id="dashTicketMedio" style="font-size: 1.8em; font-weight: bold; color: #00bcf2; display: block;">R$ 0,00</span>
+                        </div>
+                        <div>
+                            <small style="color: var(--accent); display: block;">TOTAL NO PERÍODO</small>
+                            <small style="color: var(--accent); font-size: 0.75em;">(Filtros aplicados)</small>
+                            <span id="dashTotalPeriodo" style="font-size: 1.8em; font-weight: bold; color: #00bcf2; display: block;">R$ 0,00</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -562,64 +617,41 @@
                     <div class="cadastro-header">
                         <h3 style="margin:0">Evolução Mensal de Vendas</h3>
                     </div>
-                    
-                    <div style="background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border-color); padding: 10px; margin-bottom: 10px; border-radius: 4px;">
-                        <small style="color: var(--accent); display:block; margin-bottom:5px;">FILTROS AVANÇADOS</small>
-                        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                            <div style="flex: 1; min-width: 150px;">
-                                <label style="font-size: 0.8em; color: var(--accent);">Times</label>
-                                <div class="multiselect" id="msTimes">
-                                    <div class="multiselect-head" onclick="toggleMs('msTimesBody')">Selecionar Times...</div>
-                                    <div class="multiselect-body" id="msTimesBody"></div>
-                                </div>
-                            </div>
-                            <div style="flex: 1; min-width: 150px;">
-                                <label style="font-size: 0.8em; color: var(--accent);">Vendedores</label>
-                                <div class="multiselect" id="msVens">
-                                    <div class="multiselect-head" onclick="toggleMs('msVensBody')">Todos</div>
-                                    <div class="multiselect-body" id="msVensBody"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div style="height: 300px; position: relative;">
+                    <div style="height: 450px; position: relative;">
                         <canvas id="chartMensal"></canvas>
                     </div>
                 </div>
                 <div class="cadastro-panel" style="display: flex; flex-direction: column;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                         <h3 style="margin:0;">Top Vendedores</h3>
-                        <div id="vendedoresPagination" style="display:none; gap:10px; align-items: center;">
-                            <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8em;" onclick="prevPageVendedores()">&lt;</button>
-                            <span id="vendedoresPageInfo" style="font-size:0.8em; color:var(--accent);"></span>
-                            <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8em;" onclick="nextPageVendedores()">&gt;</button>
+                        <div style="display: flex; gap: 15px; align-items: center;">
+                            <div id="vendedoresPagination" style="display:none; gap:10px; align-items: center;">
+                                <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8em;" onclick="prevPageVendedores()">&lt;</button>
+                                <span id="vendedoresPageInfo" style="font-size:0.8em; color:var(--accent);"></span>
+                                <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8em;" onclick="nextPageVendedores()">&gt;</button>
+                            </div>
+                            <button class="btn btn-primary" style="padding: 8px 20px; font-size: 1.5em; font-weight: bold;" onclick="toggleVendedoresChartType()" title="Alternar visualização">⇄</button>
                         </div>
                     </div>
-                    <div style="flex: 1; min-height: 600px; position: relative;">
+                    <div style="flex: 1; min-height: 450px; position: relative;">
                         <canvas id="chartVendedores"></canvas>
                     </div>
                 </div>
             </div>
 
-            <!-- Team Dashboards -->
-             <div class="cadastros-grid" style="margin-top: 20px;">
+            <!-- Products and Team Charts Side by Side -->
+            <div class="cadastros-grid" style="margin-top: 20px;">
                 <div class="cadastro-panel">
-                    <h3 style="margin:0 0 15px 0;">Vendas por Time (Total)</h3>
-                    <div style="height: 300px; position: relative;">
-                        <canvas id="chartTimesPie"></canvas>
+                    <h3 style="margin:0 0 15px 0;">Faturamento por Grupo de Produtos</h3>
+                    <div style="height: 350px; position: relative;">
+                        <canvas id="chartProdutos"></canvas>
                     </div>
                 </div>
                 <div class="cadastro-panel">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
-                        <h3 style="margin:0;">Vendas do Time:</h3>
-                        <select id="dashTimeFilter" style="max-width: 200px;" onchange="loadDashboardTimeSpecific()">
-                            <option value="">Selecione um Time...</option>
-                        </select>
-                    </div>
-                    <div style="height: 300px; position: relative;">
-                         <!-- Reuse ID for new Pie Chart specific to Time -->
-                        <canvas id="chartTimeSpecificPie"></canvas>
+                    <h3 style="margin:0 0 15px 0;">Vendas por Time</h3>
+                    <div style="height: 350px; position: relative;">
+                        <canvas id="chartTimesPie"></canvas>
                     </div>
                 </div>
             </div>
@@ -963,12 +995,7 @@
             <div class="form-grid">
                 <div class="form-group">
                     <label>Grupo</label>
-                    <select id="produtoGrupo">
-                        <option value="SOLAR">SOLAR</option>
-                        <option value="EQUIPAMENTOS">EQUIPAMENTOS</option>
-                        <option value="CAMERAS">CAMERAS</option>
-                        <option value="BATERIAS">BATERIAS</option>
-                    </select>
+                    <input type="text" id="produtoGrupo" placeholder="Ex: SOLAR, CABOS...">
                 </div>
                 <div class="form-group">
                     <label>Unidade</label>
@@ -989,6 +1016,21 @@
         let totalPages = 0;
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Set default dates to current month
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            
+            const formatDate = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+            
+            document.getElementById('dashDataInicio').value = formatDate(firstDay);
+            document.getElementById('dashDataFim').value = formatDate(lastDay);
+            
             loadVendas(); // Load initial data
             loadAuxData(); // Load 'Vendedores' and 'Times' for dropdowns and lists
             loadProdutos(); // NEW: Load Products
@@ -2129,34 +2171,61 @@
         let chartMensalInstance = null;
         let chartVendedoresInstance = null;
         let chartTimesPieInstance = null;
-        let chartTimeSpecificPieInstance = null; 
+        let chartProdutosInstance = null;
+        
+        let _VENDEDORES_CHART_TYPE = 'bar'; // 'bar' or 'pie'
+        
+        let _CACHE_GRUPOS = [];
+        let _CACHE_PRODUTOS_NAMES = [];
+        let _CACHE_PRODUTOS_FULL = []; // Store full product objects with grupo relationship
+        let _CACHE_VENDEDORES_UNICOS = []; // All unique vendor names from sales
 
         async function initDashboardFilters() {
-             // Populate Dropdown if needed
-            const timeFilter = document.getElementById('dashTimeFilter');
+            // Ensure Times and Vendedores are loaded
+            if (_CACHE_TIMES.length === 0) {
+                try {
+                    const times = await fetch('/api/vendas/times').then(r => r.json());
+                    _CACHE_TIMES = times;
+                } catch(e) { console.error('Erro loading times', e); }
+            }
             
-            if (timeFilter && timeFilter.options.length <= 1) {
-                 const optST = document.createElement('option');
-                 optST.value = "SEM_TIME_REF";
-                 optST.innerHTML = "Sem Time";
-                 timeFilter.appendChild(optST);
-
-                 if (_CACHE_TIMES.length > 0) {
-                     _CACHE_TIMES.forEach(t => {
-                         const opt = document.createElement('option');
-                         opt.value = t.nome;
-                         opt.innerHTML = t.nome;
-                         timeFilter.appendChild(opt);
-                     });
-                 }
+            if (_CACHE_VENDEDORES.length === 0) {
+                try {
+                    const vendedores = await fetch('/api/vendas/vendedores').then(r => r.json());
+                    _CACHE_VENDEDORES = vendedores;
+                } catch(e) { console.error('Erro loading vendedores', e); }
             }
 
-            // Init Multi-Select Logic ONLY IF EMPTY
-            const msTimesBody = document.getElementById('msTimesBody');
-            if (msTimesBody && msTimesBody.children.length === 0) {
-                 setupMultiSelect('msTimesBody', _CACHE_TIMES.map(t => t.nome), onTimesFilterChange);
-                 setupMultiSelect('msVensBody', _CACHE_VENDEDORES.map(v => v.nome), onVendorsFilterChange);
-                 // onTimesFilterChange(); // Do not verify logic on init to avoid reseting state
+            // Load all unique vendors from actual sales
+            if (_CACHE_VENDEDORES_UNICOS.length === 0) {
+                try {
+                    const vendedoresUnicos = await fetch('/api/vendas/dashboard/vendedores-unicos').then(r => r.json());
+                    _CACHE_VENDEDORES_UNICOS = vendedoresUnicos;
+                } catch(e) { console.error('Erro loading vendedores unicos', e); }
+            }
+
+            // Init Global Multi-Select (Top Filters) - Use unique vendors from sales
+            const msTimesGlobalBody = document.getElementById('msTimesGlobalBody');
+            if (msTimesGlobalBody && msTimesGlobalBody.querySelectorAll('label').length === 0) {
+                 const timesWithSemTime = [..._CACHE_TIMES.map(t => t.nome), 'Sem Time'];
+                 setupMultiSelect('msTimesGlobalBody', timesWithSemTime, onTimesFilterChange);
+                 setupMultiSelect('msVensGlobalBody', _CACHE_VENDEDORES_UNICOS, onVendorsFilterChange);
+            }
+            
+            // Populate Groups/Products for the new filters
+            if (_CACHE_GRUPOS.length === 0) {
+                try {
+                    const prods = await fetch('/api/vendas/produtos').then(r => r.json());
+                    _CACHE_PRODUTOS_FULL = prods;
+                    // Groups (include "Não Especificado" for old sales without products)
+                    _CACHE_GRUPOS = [...new Set(prods.map(p => p.grupo).filter(g => g))];
+                    _CACHE_GRUPOS.push("Não Especificado");
+                    // Products
+                    _CACHE_PRODUTOS_NAMES = [...new Set(prods.map(p => p.descricao).filter(d => d))];
+                    
+                    setupMultiSelect('msGruposBody', _CACHE_GRUPOS, onGruposFilterChange);
+                    setupMultiSelect('msProdsBody', _CACHE_PRODUTOS_NAMES, onProdutosFilterChange);
+                } catch(e) { console.error('Erro loading products details', e); }
             }
         }
 
@@ -2167,7 +2236,18 @@
             // Load Filtered Charts (Evolution and Vendors)
             await loadFilteredCharts();
 
-            // Load Global Charts (Only responsive to Date Range)
+            // Load Global Charts (Only responsive to Date Range) - Force last 12 months for monthly evolution
+            const today = new Date();
+            const twelveMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 11, 1);
+            
+            const formatDate = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+            
+            // For teams chart, use selected date filters
             const inicio = document.getElementById('dashDataInicio').value;
             const fim = document.getElementById('dashDataFim').value;
             
@@ -2184,75 +2264,166 @@
                 ]);
 
                 renderChartTimesPie(times);
-                
-                // Load specific time chart logic
-                loadDashboardTimeSpecific();
 
             } catch(e) { console.error("Erro ao carregar dashboards globais", e); }
         }
 
         async function loadFilteredCharts() {
+             // Force last 12 months for mensal chart
+             const today = new Date();
+             const twelveMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 11, 1);
+             
+             const formatDate = (date) => {
+                 const year = date.getFullYear();
+                 const month = String(date.getMonth() + 1).padStart(2, '0');
+                 const day = String(date.getDate()).padStart(2, '0');
+                 return `${year}-${month}-${day}`;
+             };
+             
+             const inicioMensal = formatDate(twelveMonthsAgo);
+             const fimMensal = formatDate(today);
+             
+             // For other charts, use selected date filters
              const inicio = document.getElementById('dashDataInicio').value;
              const fim = document.getElementById('dashDataFim').value;
              
+             // Query for mensal (last 12 months)
+             let queryStringMensal = `inicio=${inicioMensal}&fim=${fimMensal}`;
+             
+             // Query for outros charts (user selected dates)
              let queryString = '';
              const params = [];
              if (inicio) params.push(`inicio=${inicio}`);
              if (fim) params.push(`fim=${fim}`);
              
-             // Add Multi-select Filters
-             const selectedTimes = getCheckedValues('msTimesBody');
+             // Add Multi-select Filters from GLOBAL selectors
+             const selectedTimes = getCheckedValues('msTimesGlobalBody');
              if (selectedTimes.length > 0) {
-                 selectedTimes.forEach(t => params.push(`times=${encodeURIComponent(t)}`));
+                 selectedTimes.forEach(t => {
+                     params.push(`times=${encodeURIComponent(t)}`);
+                     queryStringMensal += `&times=${encodeURIComponent(t)}`;
+                 });
              }
  
-             const selectedVens = getCheckedValues('msVensBody');
+             const selectedVens = getCheckedValues('msVensGlobalBody');
              if (selectedVens.length > 0) {
-                 selectedVens.forEach(v => params.push(`vendedores=${encodeURIComponent(v)}`));
+                 selectedVens.forEach(v => {
+                     params.push(`vendedores=${encodeURIComponent(v)}`);
+                     queryStringMensal += `&vendedores=${encodeURIComponent(v)}`;
+                 });
              }
- 
-             if (params.length > 0) queryString = '?' + params.join('&');
+             
+             const selectedGroups = getCheckedValues('msGruposBody');
+             if (selectedGroups.length > 0) {
+                selectedGroups.forEach(g => {
+                    params.push(`grupos=${encodeURIComponent(g)}`);
+                    queryStringMensal += `&grupos=${encodeURIComponent(g)}`;
+                });
+            }
+            
+            const selectedProds = getCheckedValues('msProdsBody');
+            if (selectedProds.length > 0) {
+                selectedProds.forEach(p => {
+                    params.push(`produtos=${encodeURIComponent(p)}`);
+                    queryStringMensal += `&produtos=${encodeURIComponent(p)}`;
+                });
+            }
+            
+            if (params.length > 0) queryString = '?' + params.join('&');
 
              try {
-                const [mensal, vendedores] = await Promise.all([
-                    fetch(`/api/vendas/dashboard/mensal${queryString}`).then(r => r.json()),
-                    fetch(`/api/vendas/dashboard/vendedores${queryString}`).then(r => r.json())
+                const [mensal, vendedores, produtos, stats] = await Promise.all([
+                    fetch(`/api/vendas/dashboard/mensal?${queryStringMensal}`).then(r => r.json()),
+                    fetch(`/api/vendas/dashboard/vendedores${queryString}`).then(r => r.json()),
+                    fetch(`/api/vendas/dashboard/produtos${queryString}`).then(r => r.json()),
+                    fetch(`/api/vendas/dashboard/stats${queryString}`).then(r => r.json())
                 ]);
 
                 renderChartMensal(mensal);
                 renderChartVendedores(vendedores);
-                calculateTotalPeriodo(mensal);
+                renderChartProdutos(produtos);
+                updateDashboardStats(stats);
              } catch(e) { console.error("Erro ao carregar gráficos filtrados", e); }
         }
 
-        async function loadDashboardTimeSpecific() {
-            const timeName = document.getElementById('dashTimeFilter').value;
-            const ctx = document.getElementById('chartTimeSpecificPie').getContext('2d');
-            
-            if (!timeName) {
-                if(chartTimeSpecificPieInstance) {
-                    chartTimeSpecificPieInstance.destroy();
-                    chartTimeSpecificPieInstance = null;
-                }
-                return;
-            }
-
-            const inicio = document.getElementById('dashDataInicio').value;
-            const fim = document.getElementById('dashDataFim').value;
-            let queryString = `time=${encodeURIComponent(timeName)}`;
-            if (inicio) queryString += `&inicio=${inicio}`;
-            if (fim) queryString += `&fim=${fim}`;
-
-            try {
-                const data = await fetch(`/api/vendas/dashboard/vendedores-time?${queryString}`).then(r => r.json());
-                renderChartTimeSpecificPie(data);
-            } catch(e) { console.error("Erro time specific", e); }
+        function updateDashboardStats(stats) {
+            document.getElementById('dashTotalPeriodo').innerText = 
+                stats.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById('dashTicketMedio').innerText = 
+                stats.ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
 
+        function renderChartProdutos(data) {
+             const labels = data.map(d => d.grupo);
+             const values = data.map(d => d.total);
+             
+             const ctx = document.getElementById('chartProdutos').getContext('2d');
+             if(chartProdutosInstance) chartProdutosInstance.destroy();
+             
+             // Generate colors for pie chart
+             const colors = [
+                 '#0078d4', '#00bcf2', '#009e49', '#ff8c00', '#e81123',
+                 '#881798', '#5c2d91', '#e3008c', '#bf0077', '#744da9',
+                 '#4472c4', '#ed7d31', '#a5a5a5', '#ffc000', '#5b9bd5'
+             ];
+             
+             chartProdutosInstance = new Chart(ctx, {
+                 type: 'pie',
+                 data: {
+                     labels: labels,
+                     datasets: [{
+                         data: values,
+                         backgroundColor: colors.slice(0, labels.length),
+                         borderWidth: 0
+                     }]
+                 },
+                 options: {
+                     responsive: true,
+                     maintainAspectRatio: false,
+                     plugins: {
+                         legend: { 
+                             position: 'right', 
+                             labels: { color: '#e0e1dd', font: { size: 11 } }
+                         },
+                         tooltip: { 
+                             callbacks: { 
+                                 label: function(ctx) {
+                                     const val = ctx.parsed;
+                                     const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                     const pct = ((val / total) * 100).toFixed(1) + '%';
+                                     return ctx.label + ': ' + pct + ' (R$ ' + val.toLocaleString('pt-BR') + ')';
+                                 }
+                             }
+                         }
+                     }
+                 }
+             });
+        }
 
         function clearDashFilters() {
-            document.getElementById('dashDataInicio').value = '';
-            document.getElementById('dashDataFim').value = '';
+            // Reset to current month
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            
+            const formatDate = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+            
+            document.getElementById('dashDataInicio').value = formatDate(firstDay);
+            document.getElementById('dashDataFim').value = formatDate(lastDay);
+            
+            // Clear all multiselect checkboxes
+            ['msTimesGlobalBody', 'msVensGlobalBody', 'msGruposBody', 'msProdsBody'].forEach(id => {
+                const container = document.getElementById(id);
+                if(container) {
+                    container.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+                }
+            });
+            
             loadDashboards();
         }
 
@@ -2274,11 +2445,16 @@
 
         function setupMultiSelect(containerId, items, onChangeCallback) {
             const container = document.getElementById(containerId);
-            container.innerHTML = ''; // Clear existing
+            const searchInput = container.querySelector('.ms-search');
             
+            // clear items but keep search
+            const existingItems = container.querySelectorAll('.multiselect-item');
+            existingItems.forEach(e => e.remove());
+
             items.sort().forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'multiselect-item';
+                div.style.display = 'flex';
                 div.onclick = (e) => {
                     // Prevent closing when clicking item
                     if (e.target !== cb) cb.checked = !cb.checked;
@@ -2289,8 +2465,6 @@
                 const cb = document.createElement('input');
                 cb.type = 'checkbox';
                 cb.value = item;
-                // Stop propagation safely if needed, but here simple click handler works better
-                // Using div click to toggle checkbox for better UX
                 
                 const span = document.createElement('span');
                 span.innerText = item;
@@ -2300,6 +2474,21 @@
                 container.appendChild(div);
             });
             updateMsLabel(containerId);
+            
+            // Re-apply filter if search has text
+            if(searchInput && searchInput.value) {
+                filterMs(containerId, searchInput.value);
+            }
+        }
+
+        function filterMs(containerId, query) {
+            const container = document.getElementById(containerId);
+            const items = container.querySelectorAll('.multiselect-item');
+            const q = query.toLowerCase();
+            items.forEach(d => {
+                const text = d.innerText.toLowerCase();
+                d.style.display = text.includes(q) ? 'flex' : 'none';
+            });
         }
 
         function updateMsLabel(containerId) {
@@ -2310,7 +2499,11 @@
             
             const checked = container.querySelectorAll('input:checked');
             if (checked.length === 0) {
-                head.innerText = containerId.includes('Times') ? 'Selecionar Times...' : 'Todos';
+                if (containerId.includes('Times')) head.innerText = 'Todos';
+                else if (containerId.includes('Vens')) head.innerText = 'Todos';
+                else if (containerId.includes('Grupos')) head.innerText = 'Todos';
+                else if (containerId.includes('Prods')) head.innerText = 'Todos';
+                else head.innerText = 'Todos';
             } else if (checked.length === 1) {
                 head.innerText = checked[0].value;
             } else {
@@ -2325,57 +2518,96 @@
         }
 
         function onVendorsFilterChange() {
-            updateMsLabel('msVensBody');
+            updateMsLabel('msVensGlobalBody');
             loadFilteredCharts();
         }
 
         function onTimesFilterChange() {
-            updateMsLabel('msTimesBody');
+            updateMsLabel('msTimesGlobalBody');
             
-            const selectedTimes = getCheckedValues('msTimesBody');
-            const msVensBody = document.getElementById('msVensBody');
+            const selectedTimes = getCheckedValues('msTimesGlobalBody');
+            const msVensBody = document.getElementById('msVensGlobalBody');
             
-            // Filter vendors
+            // Filter vendors based on selected times
             let filteredVendors;
             if (selectedTimes.length === 0) {
-                // Default: Show All
-                filteredVendors = _CACHE_VENDEDORES.map(v => v.nome);
+                // Default: Show All unique vendors from sales
+                filteredVendors = _CACHE_VENDEDORES_UNICOS;
             } else {
-                // Show vendors belonging to these times
-                const sellers = _CACHE_VENDEDORES.filter(v => {
-                    const tName = v.time ? v.time.nome : 'SEM_TIME_REF'; // Safety
-                    return selectedTimes.includes(tName); 
-                });
-                filteredVendors = sellers.map(v => v.nome);
+                // If "Sem Time" is selected, show ALL vendors (backend will filter by time IS NULL)
+                if (selectedTimes.includes('Sem Time')) {
+                    filteredVendors = _CACHE_VENDEDORES_UNICOS;
+                } else {
+                    // Show only vendors belonging to these times (from registered vendors)
+                    const sellers = _CACHE_VENDEDORES.filter(v => {
+                        const tName = v.time ? v.time.nome : null;
+                        return tName && selectedTimes.includes(tName); 
+                    });
+                    filteredVendors = sellers.map(v => v.nome);
+                }
             }
 
             // Re-populate Vendors Dropdown
-            setupMultiSelect('msVensBody', filteredVendors, onVendorsFilterChange);
+            setupMultiSelect('msVensGlobalBody', filteredVendors, onVendorsFilterChange);
             
             // If we have selected times, Auto-Check these vendors
             if (selectedTimes.length > 0) {
                 const checkboxes = msVensBody.querySelectorAll('input[type="checkbox"]');
                 checkboxes.forEach(cb => cb.checked = true);
-                updateMsLabel('msVensBody');
+                updateMsLabel('msVensGlobalBody');
             }
 
             // Trigger reload immediately
             loadFilteredCharts();
         }
 
-        function calculateTotalPeriodo(data) {
-            let total = 0;
-            if (data && Array.isArray(data)) {
-                total = data.reduce((acc, item) => acc + (item[1] || 0), 0);
+        function onGruposFilterChange() {
+            updateMsLabel('msGruposBody');
+            
+            const selectedGroups = getCheckedValues('msGruposBody');
+            const msProdsBody = document.getElementById('msProdsBody');
+            
+            // Filter products
+            let filteredProducts;
+            if (selectedGroups.length === 0) {
+                // Default: Show All
+                filteredProducts = _CACHE_PRODUTOS_NAMES;
+            } else {
+                // Show products belonging to these groups
+                const products = _CACHE_PRODUTOS_FULL.filter(p => {
+                    return selectedGroups.includes(p.grupo);
+                });
+                filteredProducts = products.map(p => p.descricao);
             }
-            document.getElementById('dashTotalPeriodo').innerText = 
-                total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+            // Re-populate Products Dropdown
+            setupMultiSelect('msProdsBody', filteredProducts, onProdutosFilterChange);
+            
+            // If we have selected groups, Auto-Check these products
+            if (selectedGroups.length > 0) {
+                const checkboxes = msProdsBody.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(cb => cb.checked = true);
+                updateMsLabel('msProdsBody');
+            }
+
+            // Trigger reload immediately
+            loadFilteredCharts();
+        }
+
+        function onProdutosFilterChange() {
+            updateMsLabel('msProdsBody');
+            loadFilteredCharts();
         }
 
         function renderChartMensal(data) {
             const ctx = document.getElementById('chartMensal').getContext('2d');
-            const labels = data.map(item => item[0]);
-            const values = data.map(item => item[1]);
+            
+            // Convert YYYY-MM to MM/YYYY format (Brazilian)
+            const labels = data.map(item => {
+                const [year, month] = item.mes.split('-');
+                return `${month}/${year}`;
+            });
+            const values = data.map(item => item.total);
 
             if (chartMensalInstance) chartMensalInstance.destroy();
 
@@ -2427,62 +2659,109 @@
             const start = _VENDEDORES_PAGE * _VENDEDORES_PAGE_SIZE;
             const end = start + _VENDEDORES_PAGE_SIZE;
             
-            // Slice the data for current page
-            const pageData = _ALL_VENDEDORES_DATA.slice(start, end);
+            // For bar chart, use pagination. For pie chart, show all vendors (intended for filtered views).
+            const pageData = _VENDEDORES_CHART_TYPE === 'bar' 
+                ? _ALL_VENDEDORES_DATA.slice(start, end)
+                : _ALL_VENDEDORES_DATA; // Show all for pie chart
             
-            // Update UI Pagination Controls
+            // Update UI Pagination Controls (only visible in bar mode)
             const pageContainer = document.getElementById('vendedoresPagination');
             const pageInfo = document.getElementById('vendedoresPageInfo');
             
-            if (total > _VENDEDORES_PAGE_SIZE) {
+            if (_VENDEDORES_CHART_TYPE === 'bar' && total > _VENDEDORES_PAGE_SIZE) {
                 pageContainer.style.display = 'flex';
                 pageInfo.innerText = `${start + 1}-${Math.min(end, total)} de ${total}`;
             } else {
                 pageContainer.style.display = 'none';
             }
 
-            let finalLabels = pageData.map(d => d[0]);
-            let finalValues = pageData.map(d => d[1]);
+            let finalLabels = pageData.map(d => d.vendedor);
+            let finalValues = pageData.map(d => d.total);
 
             const ctx = document.getElementById('chartVendedores').getContext('2d');
             if (chartVendedoresInstance) chartVendedoresInstance.destroy();
 
-            chartVendedoresInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: finalLabels,
-                    datasets: [{
-                        label: 'Vendas (R$)',
-                        data: finalValues,
-                        backgroundColor: '#0078d4',
-                        borderColor: '#005a9e',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    indexAxis: 'y', // Makes it horizontal
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                         legend: { display: false },
-                         tooltip: { 
-                             callbacks: { 
-                                 label: function(ctx) { return 'R$ ' + ctx.parsed.x.toLocaleString('pt-BR'); }
-                             }
-                         }
+            if (_VENDEDORES_CHART_TYPE === 'bar') {
+                chartVendedoresInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: finalLabels,
+                        datasets: [{
+                            label: 'Vendas (R$)',
+                            data: finalValues,
+                            backgroundColor: '#0078d4',
+                            borderColor: '#005a9e',
+                            borderWidth: 1
+                        }]
                     },
-                    scales: {
-                        x: { 
-                            ticks: { color: '#e0e1dd' }, 
-                            grid: { color: 'rgba(255,255,255,0.1)' } 
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                             legend: { display: false },
+                             tooltip: { 
+                                 callbacks: { 
+                                     label: function(ctx) { return 'R$ ' + ctx.parsed.x.toLocaleString('pt-BR'); }
+                                 }
+                             }
                         },
-                        y: { 
-                            ticks: { color: '#e0e1dd' }, 
-                            grid: { display: false } // Cleaner look for names
+                        scales: {
+                            x: { 
+                                ticks: { color: '#e0e1dd' }, 
+                                grid: { color: 'rgba(255,255,255,0.1)' } 
+                            },
+                            y: { 
+                                ticks: { color: '#e0e1dd' }, 
+                                grid: { display: false }
+                            }
                         }
                     }
-                }
-            });
+                });
+            } else {
+                // Pie chart
+                const colors = [
+                    '#0078d4', '#00bcf2', '#009e49', '#ff8c00', '#e81123',
+                    '#881798', '#5c2d91', '#e3008c', '#bf0077', '#744da9'
+                ];
+                
+                chartVendedoresInstance = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: finalLabels,
+                        datasets: [{
+                            data: finalValues,
+                            backgroundColor: colors.slice(0, finalLabels.length),
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { 
+                                position: 'right', 
+                                labels: { color: '#e0e1dd', font: { size: 11 } }
+                            },
+                            tooltip: { 
+                                callbacks: { 
+                                    label: function(ctx) {
+                                        const val = ctx.parsed;
+                                        const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                        const pct = ((val / total) * 100).toFixed(1) + '%';
+                                        return ctx.label + ': ' + pct + ' (R$ ' + val.toLocaleString('pt-BR') + ')';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function toggleVendedoresChartType() {
+            _VENDEDORES_CHART_TYPE = _VENDEDORES_CHART_TYPE === 'bar' ? 'pie' : 'bar';
+            renderChartVendedores(); // Re-render with same data
         }
 
         function prevPageVendedores() {
@@ -2526,49 +2805,6 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: { position: 'right', labels: { color: '#e0e1dd' } }
-                    }
-                }
-            });
-        }
-
-        function renderChartTimeSpecificPie(data) {
-            const ctx = document.getElementById('chartTimeSpecificPie').getContext('2d');
-            if (chartTimeSpecificPieInstance) chartTimeSpecificPieInstance.destroy();
-
-            const labels = data.map(d => d[0]); // Nome Vendedor
-            const values = data.map(d => d[1]); // Valor
-
-            // Generate colors
-            const colors = [
-                '#0078d4', '#00bcf2', '#009e49', '#ff8c00', '#e81123',
-                '#881798', '#5c2d91', '#e3008c', '#bf0077', '#744da9'
-            ];
-
-            chartTimeSpecificPieInstance = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: values,
-                        backgroundColor: colors.slice(0, labels.length),
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'right', labels: { color: '#e0e1dd' } },
-                        tooltip: { 
-                             callbacks: { 
-                                 label: function(ctx) { 
-                                     const val = ctx.parsed;
-                                     const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                                     const pct = ((val / total) * 100).toFixed(1) + '%';
-                                     return ctx.label + ': ' + pct + ' (R$ ' + val.toLocaleString('pt-BR') + ')';
-                                 }
-                             }
-                         }
                     }
                 }
             });

@@ -25,9 +25,14 @@ import com.example.vendasjaragua.repository.TimeRepository;
 import com.example.vendasjaragua.repository.VendedorRepository;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 @RequiredArgsConstructor
 public class ExcelService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ExcelService.class);
 
     private final VendaRepository vendaRepository;
     private final ProdutoRepository produtoRepository;
@@ -85,8 +90,21 @@ public class ExcelService {
                 venda.setInversor(getStringValue(row.getCell(10)));
                 venda.setPotencia(getStringValue(row.getCell(11)));
 
-                venda.setValorVenda(getBigDecimalValue(row.getCell(12)));
-                venda.setValorMaterial(getBigDecimalValue(row.getCell(13)));
+                // Log raw values for debug
+                Cell cellVal = row.getCell(12);
+                Cell cellMat = row.getCell(13);
+                logger.info("Row {}: Col 12 (Venda) Type={}, Raw={}; Col 13 (Mat) Type={}, Raw={}", 
+                    rowIndex, 
+                    cellVal != null ? cellVal.getCellType() : "NULL",
+                    cellVal,
+                    cellMat != null ? cellMat.getCellType() : "NULL",
+                    cellMat
+                );
+
+                BigDecimal valorVenda = getBigDecimalValue(cellVal);
+                venda.setValorVenda(valorVenda);
+                BigDecimal valorMaterial = getBigDecimalValue(cellMat);
+                venda.setValorMaterial(valorMaterial); // FIXED: was using raw cell 13 again without var
                 // campos calculados automaticamente pelo modelo: row.getCell(14) e (15) sao ignorados.
                 
                 String rawProduto = getStringValue(row.getCell(16));
@@ -98,7 +116,13 @@ public class ExcelService {
                     item.setValorUnitarioCusto(BigDecimal.ZERO);
                     venda.setProduto(new ArrayList<>(Collections.singletonList(item)));
                 } else {
-                    venda.setProduto(new ArrayList<>());
+                    // Se não há produto detalhado, cria um item "Não Especificado" com o valor total
+                    VendaItem itemNaoEspecificado = new VendaItem();
+                    itemNaoEspecificado.setNomeProduto("Não Especificado");
+                    itemNaoEspecificado.setQuantidade(1);
+                    itemNaoEspecificado.setValorUnitarioVenda(valorVenda != null ? valorVenda : BigDecimal.ZERO);
+                    itemNaoEspecificado.setValorUnitarioCusto(BigDecimal.ZERO);
+                    venda.setProduto(new ArrayList<>(Collections.singletonList(itemNaoEspecificado)));
                 }
                 
                 venda.setInverterInfo(new ArrayList<>()); // Initialize with empty list as requested
@@ -261,38 +285,72 @@ public class ExcelService {
     }
 
     private String getStringValue(Cell cell) {
-        if (cell == null) return null;
-        switch (cell.getCellType()) {
-            case STRING: return cell.getStringCellValue();
-            case NUMERIC: return String.valueOf((long) cell.getNumericCellValue()); // integer string mostly
-            case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
-            default: return null;
+        if (cell == null) return "";
+        try {
+            switch (cell.getCellType()) {
+                case STRING: return cell.getStringCellValue();
+                case NUMERIC: return String.valueOf((long) cell.getNumericCellValue()); // integer string mostly
+                case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
+                default: return "";
+            }
+        } catch (Exception e) {
+            return "";
         }
     }
 
     private Double getDoubleValue(Cell cell) {
-        if (cell == null) return null;
-        if (cell.getCellType() == CellType.NUMERIC) {
-            return cell.getNumericCellValue();
-        } else if (cell.getCellType() == CellType.STRING) {
-             try {
-                 return Double.parseDouble(cell.getStringCellValue().replace("R$", "").replace(",", ".").trim());
-             } catch (NumberFormatException e) {
-                 return null;
-             }
+        if (cell == null) return 0.0;
+        try {
+            CellType type = cell.getCellType();
+            
+            if (type == CellType.FORMULA) {
+                type = cell.getCachedFormulaResultType();
+            }
+
+            if (type == CellType.NUMERIC) {
+                return cell.getNumericCellValue();
+            } else if (type == CellType.STRING) {
+                 try {
+                     String val = cell.getStringCellValue();
+                     if (val == null || val.trim().isEmpty()) return 0.0;
+                     
+                     // Regex to keep only digits, minus sign and comma
+                     // This assumes Brazilian format where '.' is thousand separator and ',' is decimal
+                     val = val.replaceAll("[^0-9,-]", ""); 
+                     
+                     if (val.isEmpty() || val.equals("-")) return 0.0;
+                     
+                     // Replace decimal comma with dot for Java parsing
+                     val = val.replace(",", ".");
+                     
+                     return Double.parseDouble(val);
+                 } catch (NumberFormatException e) {
+                     logger.warn("Failed to parse string value: '{}'", cell.getStringCellValue());
+                     return 0.0;
+                 }
+            } else {
+                logger.warn("Cell type ignored: {}", type);
+            }
+            return 0.0;
+        } catch (Exception e) {
+            logger.error("Error getting double value from cell", e);
+            return 0.0;
         }
-        return null;
     }
 
     private BigDecimal getBigDecimalValue(Cell cell) {
         Double val = getDoubleValue(cell);
-        return val != null ? BigDecimal.valueOf(val) : null;
+        return val != null ? BigDecimal.valueOf(val) : BigDecimal.ZERO;
     }
 
     private java.time.LocalDate getDateValue(Cell cell) {
         if (cell == null) return null;
-        if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
-            return cell.getDateCellValue().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        try {
+            if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+                return cell.getDateCellValue().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            }
+        } catch (Exception e) {
+            return null;
         }
         return null; // fallback or parse string if needed
     }
