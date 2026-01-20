@@ -220,14 +220,17 @@ public class VendaController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String search
     ) {
         try {
             // Sort by data descending by default to show newest first
             Pageable pageable = PageRequest.of(page, size, Sort.by("data").descending());
             Page<Venda> vendas;
 
-            if (startDate != null && endDate != null) {
+            if (search != null && !search.trim().isEmpty()) {
+                vendas = vendaRepository.searchVendas(startDate, endDate, search.trim(), pageable);
+            } else if (startDate != null && endDate != null) {
                 vendas = vendaRepository.findByDataBetween(startDate, endDate, pageable);
             } else {
                 vendas = vendaRepository.findAll(pageable);

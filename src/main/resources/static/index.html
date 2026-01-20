@@ -426,7 +426,7 @@
                 <span style="color: var(--accent)">até</span>
                 <input type="date" id="filterEndDate" onchange="resetAndLoad()" title="Data Final">
                 
-                <input type="text" id="tableFilter" onkeyup="filterTable()" placeholder="🔍 Filtrar nesta página..." style="margin-left: 15px; padding: 6px; width: 200px; border: 1px solid var(--border-color); border-radius: 4px; background-color: rgba(0,0,0,0.2); color: #fff;">
+                <input type="text" id="tableFilter" oninput="debounceSearch()" placeholder="🔍 Buscar em todas as páginas..." style="margin-left: 15px; padding: 6px; width: 200px; border: 1px solid var(--border-color); border-radius: 4px; background-color: rgba(0,0,0,0.2); color: #fff;">
 
                 <div class="actions-group" style="margin-left: 15px;">
                      <button class="btn btn-secondary" onclick="toggleImport()">
@@ -1590,18 +1590,17 @@
 
         async function loadVendas() {
             // Clear table filter when loading new data
-            if(document.getElementById('tableFilter')) document.getElementById('tableFilter').value = '';
+            // Removed clearing of tableFilter since it is now the main robust search input
 
             const startDate = document.getElementById('filterStartDate').value;
             const endDate = document.getElementById('filterEndDate').value;
+            const search = document.getElementById('tableFilter').value;
             
             let url = `/api/vendas?page=${currentPage}&size=${pageSize}`;
             
-            // Validate: Only add if both dates are present, or handle logic as needed.
-            // Backend requires both for filtering, otherwise it returns all.
-            if (startDate && endDate) {
-                url += `&startDate=${startDate}&endDate=${endDate}`;
-            }
+            if (startDate) url += `&startDate=${startDate}`;
+            if (endDate) url += `&endDate=${endDate}`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
 
             const tbody = document.querySelector('#vendasTable tbody');
             tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;">Carregando...</td></tr>';
@@ -1660,25 +1659,15 @@
             });
         }
 
-        function filterTable() {
-            const input = document.getElementById("tableFilter");
-            const filter = input.value.toLowerCase();
-            const table = document.getElementById("vendasTable");
-            const tbody = table.getElementsByTagName("tbody")[0];
-            const trs = tbody.getElementsByTagName("tr");
-
-            for (let i = 0; i < trs.length; i++) {
-                // Skip if it is a message row (colspan)
-                if (trs[i].cells.length < 2) continue;
-
-                let txtValue = trs[i].textContent || trs[i].innerText;
-                if (txtValue.toLowerCase().indexOf(filter) > -1) {
-                    trs[i].style.display = "";
-                } else {
-                    trs[i].style.display = "none";
-                }
-            }
+        let debounceTimer;
+        function debounceSearch() {
+             clearTimeout(debounceTimer);
+             debounceTimer = setTimeout(() => {
+                 resetAndLoad();
+             }, 600);
         }
+
+        // Legacy filterTable removed in favor of Server Side Search
 
         // Generic Table Filter (for Products, etc)
         function filterTableGeneric(tableId, inputId) {

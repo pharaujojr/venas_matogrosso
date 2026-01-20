@@ -41,4 +41,16 @@ public interface VendaRepository extends JpaRepository<Venda, Long>, VendaReposi
     void deleteEmptyRows();
 
     Page<Venda> findByDataBetween(LocalDate startDate, LocalDate endDate, Pageable pageable);
+
+    @Query("SELECT v FROM Venda v WHERE " +
+           "(COALESCE(:startDate, NULL) IS NULL OR v.data >= :startDate) AND " +
+           "(COALESCE(:endDate, NULL) IS NULL OR v.data <= :endDate) AND " +
+           "(LOWER(v.cliente) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.vendedor) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.nf) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.ov) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Venda> searchVendas(@Param("startDate") LocalDate startDate, 
+                             @Param("endDate") LocalDate endDate, 
+                             @Param("search") String search, 
+                             Pageable pageable);
 }
