@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Vendas Mato Grosso</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-login:hover {
+            background: #5568d3;
+        }
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+        }
+        .checkbox-group label {
+            margin: 0;
+            font-weight: normal;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>🔐 Login</h1>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Usuário</label>
+                <input type="text" id="username" required autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label for="password">Senha</label>
+                <input type="password" id="password" required autocomplete="current-password">
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="rememberMe" checked>
+                <label for="rememberMe">Manter-me conectado por 7 dias</label>
+            </div>
+            <button type="submit" class="btn-login">Entrar</button>
+            <div class="error-message" id="errorMessage">Usuário ou senha incorretos</div>
+        </form>
+    </div>
+
+    <script>
+        const VALID_USER = 'solturi';
+        const VALID_PASS = 'Solturi2025.';
+        const SESSION_KEY = 'vmt_auth_token';
+        const EXPIRY_KEY = 'vmt_auth_expiry';
+
+        // Verificar se já está logado
+        if (isAuthenticated()) {
+            window.location.href = 'index.html';
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+            const errorMsg = document.getElementById('errorMessage');
+
+            if (username === VALID_USER && password === VALID_PASS) {
+                // Gerar token simples (hash baseado em timestamp + credenciais)
+                const token = btoa(username + ':' + new Date().getTime() + ':' + VALID_PASS.substring(0, 4));
+                
+                // Definir data de expiração (7 dias se "lembrar-me", 12 horas se não)
+                const expiryHours = rememberMe ? (7 * 24) : 12;
+                const expiryDate = new Date().getTime() + (expiryHours * 60 * 60 * 1000);
+                
+                localStorage.setItem(SESSION_KEY, token);
+                localStorage.setItem(EXPIRY_KEY, expiryDate.toString());
+                
+                window.location.href = 'index.html';
+            } else {
+                errorMsg.style.display = 'block';
+                document.getElementById('password').value = '';
+            }
+        });
+
+        function isAuthenticated() {
+            const token = localStorage.getItem(SESSION_KEY);
+            const expiry = localStorage.getItem(EXPIRY_KEY);
+            
+            if (!token || !expiry) return false;
+            
+            // Verificar se expirou
+            if (new Date().getTime() > parseInt(expiry)) {
+                localStorage.removeItem(SESSION_KEY);
+                localStorage.removeItem(EXPIRY_KEY);
+                return false;
+            }
+            
+            return true;
+        }
+    </script>
+</body>
+</html>

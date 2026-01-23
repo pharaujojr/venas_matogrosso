@@ -4,6 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vendas Mato Grosso</title>
+    <script>
+        // Verificar autenticação antes de carregar a página
+        (function() {
+            const SESSION_KEY = 'vmt_auth_token';
+            const EXPIRY_KEY = 'vmt_auth_expiry';
+            
+            const token = localStorage.getItem(SESSION_KEY);
+            const expiry = localStorage.getItem(EXPIRY_KEY);
+            
+            // Se não tiver token ou expirou, redirecionar para login
+            if (!token || !expiry || new Date().getTime() > parseInt(expiry)) {
+                localStorage.removeItem(SESSION_KEY);
+                localStorage.removeItem(EXPIRY_KEY);
+                window.location.href = 'login.html';
+            }
+        })();
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600&display=swap');
@@ -408,7 +425,10 @@
             <div style="display: flex; align-items: center; gap: 15px;">
                 <h1 style="margin: 0;">Controle de Vendas</h1>
             </div>
-            <img src="solturi.svg" alt="Solturi" style="height: 50px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <img src="solturi.svg" alt="Solturi" style="height: 50px;">
+                <button onclick="logout()" style="padding: 8px 16px; background: rgba(231,76,60,0.8); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;" title="Sair do sistema">🚪 Sair</button>
+            </div>
         </div>
 
         <div class="tab-container">
@@ -1064,6 +1084,14 @@
         });
 
         // Tab Switching
+        function logout() {
+            if (confirm('Deseja realmente sair do sistema?')) {
+                localStorage.removeItem('vmt_auth_token');
+                localStorage.removeItem('vmt_auth_expiry');
+                window.location.href = 'login.html';
+            }
+        }
+
         function switchTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
