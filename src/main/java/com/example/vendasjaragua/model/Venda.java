@@ -4,13 +4,14 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ArrayList;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 @Entity
-@Table(name = "vendas_jaragua")
+@Table(name = "financeiro_clientes")
 @Data
 public class Venda {
 
@@ -18,65 +19,90 @@ public class Venda {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String cliente;
-    private String nf;
-    private String ov;
-    private String entrega; // Could be date or text
+    @Column(name = "nome")
+    private String cliente; // Mapeia para 'nome' na tabela financeiro_clientes
+    
+    @Column(name = "cpf_cnpj")
+    private String nf; // CPF/CNPJ do cliente
+    
+    private String ov; // Ordem de Venda
+    
+    private String entrega; // Informação de entrega
+    
     private String telefone;
-    private String cidade;
-    private String estado;
+    
+    private String cidade; // Cidade do cliente
+    
+    private String estado; // Estado (UF) do cliente
+    
     private String vendedor;
 
-    @Column(name = "data_venda")
-    private LocalDate data;
+    private LocalDate data; // Data da venda/cadastro
 
-    private String placas;
-    private String inversor;
-    private String potencia; 
+    private String placas; // Informação sobre placas solares
+    
+    private String inversor; // Tipo/modelo do inversor
+    
+    private String potencia; // Potência do sistema
 
-    @Column(name = "valor_venda")
-    private BigDecimal valorVenda;
+    @Column(name = "valor_debito")
+    private BigDecimal valorVenda; // Mapeia para valor_debito
 
-    @Column(name = "valor_material")
-    private BigDecimal valorMaterial;
+    @Column(name = "valor_custo")
+    private BigDecimal valorMaterial; // Mapeia para valor_custo (custo/material)
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
-    private List<VendaItem> produto; // Kept name 'produto' as requested, but now it is a List
+    private List<VendaItem> produto; // Lista de produtos em JSON
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "inverter_info", columnDefinition = "jsonb")
-    private List<InverterItem> inverterInfo = new ArrayList<>();
+    private List<InverterItem> inverterInfo = new ArrayList<>(); // Info dos inversores em JSON
 
-    private String time;
+    @Column(name = "filial")
+    private String time; // Mapeia para 'filial' (substitui time)
+    
+    // Novos campos da tabela financeiro_clientes
+    private String email;
+    
+    @Column(name = "data_cadastro")
+    private LocalDateTime dataCadastro;
+    
+    @Column(columnDefinition = "TEXT")
+    private String observacao;
+    
+    @Column(name = "forma_pagamento")
+    private String formaPagamento;
+    
+    private Boolean ganho = true; // Padrão: true para novas vendas
 
     @PrePersist
-    @PreUpdate
-    public void calculateTotals() {
-        if (produto != null && !produto.isEmpty()) {
-            this.valorVenda = produto.stream()
-                .filter(i -> i.getValorUnitarioVenda() != null && i.getQuantidade() != null)
-                .map(i -> i.getValorUnitarioVenda().multiply(BigDecimal.valueOf(i.getQuantidade())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            this.valorMaterial = produto.stream()
-                .filter(i -> i.getValorUnitarioCusto() != null && i.getQuantidade() != null)
-                .map(i -> i.getValorUnitarioCusto().multiply(BigDecimal.valueOf(i.getQuantidade())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    public void prePersist() {
+        if (dataCadastro == null) {
+            dataCadastro = LocalDateTime.now();
+        }
+        if (valorVenda == null) {
+            valorVenda = BigDecimal.ZERO;
+        }
+        if (valorMaterial == null) {
+            valorMaterial = BigDecimal.ZERO;
+        }
+        if (ganho == null) {
+            ganho = true; // Padrão: true
         }
     }
 
+    // Saldo = valor_debito - valor_pago
     public BigDecimal getValorBruto() {
         if (valorVenda != null && valorMaterial != null) {
             return valorVenda.subtract(valorMaterial);
         }
-        return null;
+        return BigDecimal.ZERO;
     }
 
     public Double getMarkup() {
         if (valorVenda != null && valorMaterial != null && valorMaterial.compareTo(BigDecimal.ZERO) != 0) {
             try {
-                // (valorVenda / valorMaterial) - 1
                 return valorVenda.divide(valorMaterial, 4, java.math.RoundingMode.HALF_UP)
                         .subtract(BigDecimal.ONE)
                         .doubleValue();
@@ -85,5 +111,10 @@ public class Venda {
             }
         }
         return 0.0;
+    }
+    
+    // Método auxiliar para saber se está pago
+    public boolean isPago() {
+        return getValorBruto().compareTo(BigDecimal.ZERO) <= 0;
     }
 }

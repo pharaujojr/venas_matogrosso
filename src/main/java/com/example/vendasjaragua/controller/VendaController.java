@@ -4,10 +4,16 @@ import com.example.vendasjaragua.model.Venda;
 import com.example.vendasjaragua.model.Time;
 import com.example.vendasjaragua.model.Vendedor;
 import com.example.vendasjaragua.model.Produto;
+import com.example.vendasjaragua.model.VendedorMatoGrosso;
+import com.example.vendasjaragua.model.ProdutoMatoGrosso;
+import com.example.vendasjaragua.model.Filial;
 import com.example.vendasjaragua.repository.TimeRepository;
 import com.example.vendasjaragua.repository.VendedorRepository;
 import com.example.vendasjaragua.repository.VendaRepository;
 import com.example.vendasjaragua.repository.ProdutoRepository;
+import com.example.vendasjaragua.repository.VendedorMatoGrossoRepository;
+import com.example.vendasjaragua.repository.ProdutoMatoGrossoRepository;
+import com.example.vendasjaragua.repository.FilialRepository;
 import com.example.vendasjaragua.service.ExcelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,15 +28,11 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 import java.util.List;
-import org.springframework.format.annotation.DateTimeFormat;
-import java.time.LocalDate;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/vendas")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // Allow for simple testing from static file
+@CrossOrigin(origins = "*")
 public class VendaController {
 
     private final ExcelService excelService;
@@ -38,6 +40,9 @@ public class VendaController {
     private final TimeRepository timeRepository;
     private final VendedorRepository vendedorRepository;
     private final ProdutoRepository produtoRepository;
+    private final VendedorMatoGrossoRepository vendedorMatoGrossoRepository;
+    private final ProdutoMatoGrossoRepository produtoMatoGrossoRepository;
+    private final FilialRepository filialRepository;
 
     @PostMapping
     public ResponseEntity<Venda> createVenda(@RequestBody Venda venda) {
@@ -45,6 +50,7 @@ public class VendaController {
             Venda novaVenda = vendaRepository.save(venda);
             return new ResponseEntity<>(novaVenda, HttpStatus.CREATED);
         } catch (Exception e) {
+            e.printStackTrace(); // Log do erro
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -73,6 +79,7 @@ public class VendaController {
             Venda updatedVenda = vendaRepository.save(venda);
             return new ResponseEntity<>(updatedVenda, HttpStatus.OK);
         } catch (Exception e) {
+            e.printStackTrace(); // Log do erro
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -80,11 +87,6 @@ public class VendaController {
     @GetMapping("/times")
     public ResponseEntity<List<Time>> getAllTimes() {
         return new ResponseEntity<>(timeRepository.findAll(), HttpStatus.OK);
-    }
-
-    @GetMapping("/vendedores")
-    public ResponseEntity<List<Vendedor>> getAllVendedores() {
-        return new ResponseEntity<>(vendedorRepository.findAll(), HttpStatus.OK);
     }
 
     @PostMapping("/times")
@@ -118,6 +120,130 @@ public class VendaController {
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
         } catch (Exception e) {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // Endpoints de Filiais (Mato Grosso)
+    @GetMapping("/filiais")
+    public ResponseEntity<List<Filial>> getAllFiliais(
+            @RequestParam(required = false, defaultValue = "true") Boolean apenasAtivas
+    ) {
+        try {
+            List<Filial> filiais = apenasAtivas 
+                ? filialRepository.findByAtivoTrue()
+                : filialRepository.findAll();
+            return new ResponseEntity<>(filiais, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/filiais")
+    public ResponseEntity<Filial> createFilial(@RequestBody Filial filial) {
+        try {
+            return new ResponseEntity<>(filialRepository.save(filial), HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PutMapping("/filiais/{id}")
+    public ResponseEntity<Filial> updateFilial(@PathVariable Long id, @RequestBody Filial filial) {
+        try {
+            return filialRepository.findById(id)
+                .map(existingFilial -> {
+                    existingFilial.setNome(filial.getNome());
+                    existingFilial.setCodigo(filial.getCodigo());
+                    existingFilial.setAtivo(filial.getAtivo());
+                    return new ResponseEntity<>(filialRepository.save(existingFilial), HttpStatus.OK);
+                })
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @DeleteMapping("/filiais/{id}")
+    public ResponseEntity<HttpStatus> deleteFilial(@PathVariable Long id) {
+        try {
+            filialRepository.deleteById(id);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/vendedores")
+    public ResponseEntity<List<Vendedor>> getAllVendedores() {
+        return new ResponseEntity<>(vendedorRepository.findAll(), HttpStatus.OK);
+    }
+    
+    // Novos endpoints para Mato Grosso
+    @GetMapping("/vendedores-mg")
+    public ResponseEntity<List<VendedorMatoGrosso>> getAllVendedoresMatoGrosso(
+            @RequestParam(required = false) String filial,
+            @RequestParam(required = false, defaultValue = "true") Boolean apenasAtivos
+    ) {
+        try {
+            List<VendedorMatoGrosso> vendedores;
+            
+            if (filial != null && !filial.trim().isEmpty()) {
+                Filial filialObj = filialRepository.findByNome(filial).orElse(null);
+                if (filialObj == null) {
+                    return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+                }
+                vendedores = apenasAtivos 
+                    ? vendedorMatoGrossoRepository.findByFilialAndAtivoTrue(filialObj)
+                    : vendedorMatoGrossoRepository.findByFilial(filialObj);
+            } else {
+                vendedores = apenasAtivos
+                    ? vendedorMatoGrossoRepository.findByAtivoTrue()
+                    : vendedorMatoGrossoRepository.findAll();
+            }
+            
+            return new ResponseEntity<>(vendedores, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/vendedores-mg")
+    public ResponseEntity<VendedorMatoGrosso> createVendedorMatoGrosso(@RequestBody VendedorMatoGrosso vendedor) {
+        try {
+            return new ResponseEntity<>(vendedorMatoGrossoRepository.save(vendedor), HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PutMapping("/vendedores-mg/{id}")
+    public ResponseEntity<VendedorMatoGrosso> updateVendedorMatoGrosso(
+            @PathVariable Long id, 
+            @RequestBody VendedorMatoGrosso vendedor
+    ) {
+        try {
+            return vendedorMatoGrossoRepository.findById(id)
+                .map(existingVendedor -> {
+                    existingVendedor.setNome(vendedor.getNome());
+                    existingVendedor.setFilial(vendedor.getFilial());
+                    existingVendedor.setAtivo(vendedor.getAtivo());
+                    existingVendedor.setEmail(vendedor.getEmail());
+                    existingVendedor.setTelefone(vendedor.getTelefone());
+                    return new ResponseEntity<>(vendedorMatoGrossoRepository.save(existingVendedor), HttpStatus.OK);
+                })
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @DeleteMapping("/vendedores-mg/{id}")
+    public ResponseEntity<HttpStatus> deleteVendedorMatoGrosso(@PathVariable Long id) {
+        try {
+            vendedorMatoGrossoRepository.deleteById(id);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -257,6 +383,113 @@ public class VendaController {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    
+    // Novos endpoints para Produtos Mato Grosso
+    @GetMapping("/produtos-mg")
+    public ResponseEntity<List<ProdutoMatoGrosso>> getAllProdutosMatoGrosso(
+            @RequestParam(required = false) String grupo
+    ) {
+        try {
+            List<ProdutoMatoGrosso> produtos;
+            
+            if (grupo != null && !grupo.trim().isEmpty()) {
+                produtos = produtoMatoGrossoRepository.findByGrupo(grupo);
+            } else {
+                produtos = produtoMatoGrossoRepository.findAll();
+            }
+            
+            return new ResponseEntity<>(produtos, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/produtos-mg")
+    public ResponseEntity<ProdutoMatoGrosso> createProdutoMatoGrosso(@RequestBody ProdutoMatoGrosso produto) {
+        try {
+            return new ResponseEntity<>(produtoMatoGrossoRepository.save(produto), HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PutMapping("/produtos-mg/{id}")
+    public ResponseEntity<ProdutoMatoGrosso> updateProdutoMatoGrosso(
+            @PathVariable Long id, 
+            @RequestBody ProdutoMatoGrosso produto
+    ) {
+        try {
+            return produtoMatoGrossoRepository.findById(id)
+                .map(existingProduto -> {
+                    existingProduto.setDescricao(produto.getDescricao());
+                    existingProduto.setGrupo(produto.getGrupo());
+                    existingProduto.setUnidade(produto.getUnidade());
+                    return new ResponseEntity<>(produtoMatoGrossoRepository.save(existingProduto), HttpStatus.OK);
+                })
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @DeleteMapping("/produtos-mg/{id}")
+    public ResponseEntity<HttpStatus> deleteProdutoMatoGrosso(@PathVariable Long id) {
+        try {
+            produtoMatoGrossoRepository.deleteById(id);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    @GetMapping("/grupos-mg")
+    public ResponseEntity<List<String>> getGruposProdutosMatoGrosso() {
+        try {
+            return new ResponseEntity<>(produtoMatoGrossoRepository.findDistinctGrupos(), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    // Endpoints de Upload para Mato Grosso
+    @PostMapping("/vendedores-mg/upload")
+    public ResponseEntity<String> uploadVendedoresMatoGrossoFile(@RequestParam("file") MultipartFile file) {
+        if (ExcelHelper.hasExcelFormat(file)) {
+            try {
+                excelService.saveVendedoresMatoGrosso(file);
+                return ResponseEntity.status(HttpStatus.OK).body("Vendedores Mato Grosso importados com sucesso.");
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body("Erro: " + e.getMessage());
+            }
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Arquivo inválido!");
+    }
+
+    @PostMapping("/produtos-mg/upload")
+    public ResponseEntity<String> uploadProdutosMatoGrossoFile(@RequestParam("file") MultipartFile file) {
+        if (ExcelHelper.hasExcelFormat(file)) {
+            try {
+                excelService.saveProdutosMatoGrosso(file);
+                return ResponseEntity.status(HttpStatus.OK).body("Produtos Mato Grosso importados com sucesso.");
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body("Erro: " + e.getMessage());
+            }
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Arquivo inválido!");
+    }
+
+    @PostMapping("/grupos-mg/upload")
+    public ResponseEntity<String> uploadGruposMatoGrossoFile(@RequestParam("file") MultipartFile file) {
+        if (ExcelHelper.hasExcelFormat(file)) {
+            try {
+                excelService.saveGruposMatoGrosso(file);
+                return ResponseEntity.status(HttpStatus.OK).body("Grupos Mato Grosso importados com sucesso.");
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body("Erro: " + e.getMessage());
+            }
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Arquivo inválido!");
+    }
 
     @PostMapping("/produtos")
     public ResponseEntity<Produto> createProduto(@RequestBody Produto produto) {
@@ -297,7 +530,7 @@ public class VendaController {
     public ResponseEntity<List<java.util.Map<String, Object>>> getDashboardMensal(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim,
-            @RequestParam(required = false) List<String> times,
+            @RequestParam(required = false) List<String> filiais,
             @RequestParam(required = false) List<String> vendedores,
             @RequestParam(required = false) List<String> grupos,
             @RequestParam(required = false) List<String> produtos
@@ -306,19 +539,19 @@ public class VendaController {
         if (fim == null) fim = LocalDate.now().plusYears(100);
         
         // Handle empty lists if Spring passes them as empty instead of null
-        if (times != null && times.isEmpty()) times = null;
+        if (filiais != null && filiais.isEmpty()) filiais = null;
         if (vendedores != null && vendedores.isEmpty()) vendedores = null;
         if (grupos != null && grupos.isEmpty()) grupos = null;
         if (produtos != null && produtos.isEmpty()) produtos = null;
 
-        return new ResponseEntity<>(vendaRepository.findVendasPorMes(inicio, fim, times, vendedores, grupos, produtos), HttpStatus.OK);
+        return new ResponseEntity<>(vendaRepository.findVendasPorMes(inicio, fim, filiais, vendedores, grupos, produtos), HttpStatus.OK);
     }
 
     @GetMapping("/dashboard/vendedores")
     public ResponseEntity<List<java.util.Map<String, Object>>> getDashboardVendedores(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim,
-            @RequestParam(required = false) List<String> times,
+            @RequestParam(required = false) List<String> filiais,
             @RequestParam(required = false) List<String> vendedores,
             @RequestParam(required = false) List<String> grupos,
             @RequestParam(required = false) List<String> produtos
@@ -326,19 +559,19 @@ public class VendaController {
         if (inicio == null) inicio = LocalDate.of(2000, 1, 1);
         if (fim == null) fim = LocalDate.now().plusYears(100);
         
-        if (times != null && times.isEmpty()) times = null;
+        if (filiais != null && filiais.isEmpty()) filiais = null;
         if (vendedores != null && vendedores.isEmpty()) vendedores = null;
         if (grupos != null && grupos.isEmpty()) grupos = null;
         if (produtos != null && produtos.isEmpty()) produtos = null;
 
-        return new ResponseEntity<>(vendaRepository.findVendasPorVendedorDynamic(inicio, fim, times, vendedores, grupos, produtos), HttpStatus.OK);
+        return new ResponseEntity<>(vendaRepository.findVendasPorVendedorDynamic(inicio, fim, filiais, vendedores, grupos, produtos), HttpStatus.OK);
     }
 
     @GetMapping("/dashboard/produtos")
     public ResponseEntity<List<java.util.Map<String, Object>>> getDashboardProdutos(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim,
-            @RequestParam(required = false) List<String> times,
+            @RequestParam(required = false) List<String> filiais,
             @RequestParam(required = false) List<String> vendedores,
             @RequestParam(required = false) List<String> grupos,
             @RequestParam(required = false) List<String> produtos
@@ -349,7 +582,7 @@ public class VendaController {
         // Use dynamic query directly without dummy list workaround
         return new ResponseEntity<>(vendaRepository.findFaturamentoPorGrupoDynamic(
             inicio, fim, 
-            times, 
+            filiais, 
             vendedores, 
             grupos, 
             produtos
@@ -378,29 +611,45 @@ public class VendaController {
 
     @GetMapping("/dashboard/vendedores-time")
     public ResponseEntity<List<Object[]>> getDashboardVendedoresTime(
-            @RequestParam String time,
+            @RequestParam String filial,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim
     ) {
         if (inicio == null) inicio = LocalDate.of(2000, 1, 1);
         if (fim == null) fim = LocalDate.now().plusYears(100);
         
-        if ("SEM_TIME_REF".equals(time)) {
+        if ("SEM_FILIAL_REF".equals(filial) || "SEM_TIME_REF".equals(filial)) {
              return new ResponseEntity<>(vendaRepository.findVendasPorVendedorWhereTimeIsNull(inicio, fim), HttpStatus.OK);
         }
-        return new ResponseEntity<>(vendaRepository.findVendasPorVendedorAndTime(time, inicio, fim), HttpStatus.OK);
+        return new ResponseEntity<>(vendaRepository.findVendasPorVendedorAndTime(filial, inicio, fim), HttpStatus.OK);
     }
 
     @GetMapping("/dashboard/vendedores-unicos")
     public ResponseEntity<List<String>> getVendedoresUnicos() {
         return new ResponseEntity<>(vendaRepository.findVendedoresUnicos(), HttpStatus.OK);
     }
+    
+    // Endpoint antigo para compatibilidade - retorna nomes de filiais das vendas
+    @GetMapping("/filiais-vendas")
+    public ResponseEntity<List<String>> getFiliaisVendas() {
+        try {
+            List<String> filiais = vendaRepository.findAll().stream()
+                    .map(Venda::getTime)
+                    .filter(f -> f != null && !f.trim().isEmpty())
+                    .distinct()
+                    .sorted()
+                    .collect(java.util.stream.Collectors.toList());
+            return new ResponseEntity<>(filiais, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
     @GetMapping("/dashboard/stats")
     public ResponseEntity<java.util.Map<String, Object>> getDashboardStats(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim,
-            @RequestParam(required = false) List<String> times,
+            @RequestParam(required = false) List<String> filiais,
             @RequestParam(required = false) List<String> vendedores,
             @RequestParam(required = false) List<String> grupos,
             @RequestParam(required = false) List<String> produtos
@@ -409,18 +658,18 @@ public class VendaController {
         if (fim == null) fim = LocalDate.now().plusYears(100);
         
         // Handle empty lists
-        if (times != null && times.isEmpty()) times = null;
+        if (filiais != null && filiais.isEmpty()) filiais = null;
         if (vendedores != null && vendedores.isEmpty()) vendedores = null;
         if (grupos != null && grupos.isEmpty()) grupos = null;
         if (produtos != null && produtos.isEmpty()) produtos = null;
 
-        List<java.util.Map<String, Object>> mensal = vendaRepository.findVendasPorMes(inicio, fim, times, vendedores, grupos, produtos);
+        List<java.util.Map<String, Object>> mensal = vendaRepository.findVendasPorMes(inicio, fim, filiais, vendedores, grupos, produtos);
         
         double total = mensal.stream()
             .mapToDouble(row -> ((Number) row.get("total")).doubleValue())
             .sum();
         
-        long count = vendaRepository.countVendasFiltradas(inicio, fim, times, vendedores, grupos, produtos);
+        long count = vendaRepository.countVendasFiltradas(inicio, fim, filiais, vendedores, grupos, produtos);
         
         double ticketMedio = count > 0 ? total / count : 0;
         

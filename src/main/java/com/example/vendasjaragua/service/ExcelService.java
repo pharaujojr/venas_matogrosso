@@ -20,9 +20,15 @@ import com.example.vendasjaragua.model.VendaItem;
 import com.example.vendasjaragua.model.Produto;
 import com.example.vendasjaragua.model.Time;
 import com.example.vendasjaragua.model.Vendedor;
+import com.example.vendasjaragua.model.VendedorMatoGrosso;
+import com.example.vendasjaragua.model.ProdutoMatoGrosso;
+import com.example.vendasjaragua.model.Filial;
 import com.example.vendasjaragua.repository.ProdutoRepository;
 import com.example.vendasjaragua.repository.TimeRepository;
 import com.example.vendasjaragua.repository.VendedorRepository;
+import com.example.vendasjaragua.repository.VendedorMatoGrossoRepository;
+import com.example.vendasjaragua.repository.ProdutoMatoGrossoRepository;
+import com.example.vendasjaragua.repository.FilialRepository;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -38,6 +44,9 @@ public class ExcelService {
     private final ProdutoRepository produtoRepository;
     private final TimeRepository timeRepository;
     private final VendedorRepository vendedorRepository;
+    private final VendedorMatoGrossoRepository vendedorMatoGrossoRepository;
+    private final ProdutoMatoGrossoRepository produtoMatoGrossoRepository;
+    private final FilialRepository filialRepository;
 
     public void save(MultipartFile file) {
         try {
@@ -388,5 +397,123 @@ public class ExcelService {
             return null;
         }
         return null; // fallback or parse string if needed
+    }
+    
+    // Métodos de upload para Mato Grosso
+    public void saveVendedoresMatoGrosso(MultipartFile file) {
+        try {
+            List<VendedorMatoGrosso> vendedores = parseVendedoresMatoGrossoExcel(file.getInputStream());
+            vendedorMatoGrossoRepository.saveAll(vendedores);
+        } catch (IOException e) {
+            throw new RuntimeException("Falha ao importar vendedores: " + e.getMessage());
+        }
+    }
+    
+    private List<VendedorMatoGrosso> parseVendedoresMatoGrossoExcel(InputStream is) {
+        try {
+            Workbook workbook = new XSSFWorkbook(is);
+            Sheet sheet = workbook.getSheetAt(0);
+            List<VendedorMatoGrosso> vendedores = new ArrayList<>();
+            
+            int rowIndex = 0;
+            for (Row row : sheet) {
+                if (rowIndex == 0) { // Skip header
+                    rowIndex++;
+                    continue;
+                }
+                
+                if (isRowEmpty(row)) {
+                    rowIndex++;
+                    continue;
+                }
+                
+                VendedorMatoGrosso vendedor = new VendedorMatoGrosso();
+                // Colunas: NOME, FILIAL, EMAIL, TELEFONE, ATIVO
+                String nomeVendedor = getStringValue(row.getCell(0));
+                vendedor.setNome(nomeVendedor);
+                
+                String nomeFilial = getStringValue(row.getCell(1));
+                if (nomeFilial == null || nomeFilial.trim().isEmpty()) {
+                    throw new IOException("Linha " + (rowIndex + 1) + ": Vendedor '" + nomeVendedor + "' não possui filial informada. Importação cancelada.");
+                }
+                
+                final String filialNome = nomeFilial; // Make effectively final for lambda
+                final int currentRow = rowIndex; // Make effectively final for lambda
+                Filial filial = filialRepository.findByNome(filialNome)
+                    .orElseThrow(() -> new IOException("Linha " + (currentRow + 1) + ": Filial '" + filialNome + "' não encontrada. Cadastre a filial primeiro."));
+                vendedor.setFilial(filial);
+                
+                vendedor.setEmail(getStringValue(row.getCell(2)));
+                vendedor.setTelefone(getStringValue(row.getCell(3)));
+                
+                String ativoStr = getStringValue(row.getCell(4));
+                vendedor.setAtivo(ativoStr == null || ativoStr.trim().isEmpty() || 
+                                 ativoStr.equalsIgnoreCase("sim") || 
+                                 ativoStr.equalsIgnoreCase("true") ||
+                                 ativoStr.equalsIgnoreCase("ativo"));
+                
+                vendedores.add(vendedor);
+                rowIndex++;
+            }
+            
+            workbook.close();
+            return vendedores;
+        } catch (IOException e) {
+            throw new RuntimeException("Erro ao processar arquivo Excel: " + e.getMessage());
+        }
+    }
+    
+    public void saveProdutosMatoGrosso(MultipartFile file) {
+        try {
+            List<ProdutoMatoGrosso> produtos = parseProdutosMatoGrossoExcel(file.getInputStream());
+            produtoMatoGrossoRepository.saveAll(produtos);
+        } catch (IOException e) {
+            throw new RuntimeException("Falha ao importar produtos: " + e.getMessage());
+        }
+    }
+    
+    private List<ProdutoMatoGrosso> parseProdutosMatoGrossoExcel(InputStream is) {
+        try {
+            Workbook workbook = new XSSFWorkbook(is);
+            Sheet sheet = workbook.getSheetAt(0);
+            List<ProdutoMatoGrosso> produtos = new ArrayList<>();
+            
+            int rowIndex = 0;
+            for (Row row : sheet) {
+                if (rowIndex == 0) { // Skip header
+                    rowIndex++;
+                    continue;
+                }
+                
+                if (isRowEmpty(row)) {
+                    rowIndex++;
+                    continue;
+                }
+                
+                ProdutoMatoGrosso produto = new ProdutoMatoGrosso();
+                // Colunas: DESCRIÇÃO, GRUPO, UNIDADE
+                produto.setDescricao(getStringValue(row.getCell(0)));
+                produto.setGrupo(getStringValue(row.getCell(1)));
+                produto.setUnidade(getStringValue(row.getCell(2)));
+                
+                produtos.add(produto);
+                rowIndex++;
+            }
+            
+            workbook.close();
+            return produtos;
+        } catch (IOException e) {
+            throw new RuntimeException("Erro ao processar arquivo Excel: " + e.getMessage());
+        }
+    }
+    
+    public void saveGruposMatoGrosso(MultipartFile file) {
+        // Este método pode ser usado para importar apenas grupos
+        // ou podemos reutilizar saveProdutosMatoGrosso já que grupos vêm dos produtos
+        try {
+            saveProdutosMatoGrosso(file);
+        } catch (Exception e) {
+            throw new RuntimeException("Falha ao importar grupos: " + e.getMessage());
+        }
     }
 }

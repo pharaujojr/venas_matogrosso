@@ -463,7 +463,7 @@
                             <th>Material (R$)</th>
                             <th>Lucro Bruto</th>
                             <th>Markup</th>
-                            <th>Time</th>
+                            <th>Filial</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -482,17 +482,17 @@
         <!-- TAB CADASTROS -->
         <div id="tab-cadastros" class="tab-content">
             <div class="cadastros-grid">
-                <!-- TIMES SECTION -->
+                <!-- FILIAIS SECTION -->
                 <div class="cadastro-panel">
                     <div class="cadastro-header">
-                        <h3 style="margin:0">Times</h3>
+                        <h3 style="margin:0">Filiais</h3>
                         <div>
-                            <button class="btn" onclick="openImportTimesModal()" style="padding: 5px 10px; font-size: 12px; margin-right: 5px; background-color: #28a745;">⇪ Importar</button>
-                            <button class="btn" onclick="openTimeModal()" style="padding: 5px 10px; font-size: 12px;">+ Novo</button>
+                            <button class="btn" onclick="openImportFiliaisModal()" style="padding: 5px 10px; font-size: 12px; margin-right: 5px; background-color: #28a745;">⇪ Importar</button>
+                            <button class="btn" onclick="openFilialModal()" style="padding: 5px 10px; font-size: 12px;">+ Novo</button>
                         </div>
                     </div>
-                    <input type="text" id="timesFilter" onkeyup="filterList('timesList', 'timesFilter')" placeholder="🔍 Filtrar times..." style="width: 100%; box-sizing: border-box; margin-bottom: 10px; padding: 6px; border: 1px solid var(--border-color); border-radius: 4px; background-color: rgba(0,0,0,0.2); color: #fff;">
-                    <ul id="timesList" class="cadastro-list">
+                    <input type="text" id="filiaisFilter" onkeyup="filterList('filiaisList', 'filiaisFilter')" placeholder="🔍 Filtrar filiais..." style="width: 100%; box-sizing: border-box; margin-bottom: 10px; padding: 6px; border: 1px solid var(--border-color); border-radius: 4px; background-color: rgba(0,0,0,0.2); color: #fff;">
+                    <ul id="filiaisList" class="cadastro-list">
                         <!-- Loaded via JS -->
                     </ul>
                 </div>
@@ -561,11 +561,11 @@
                         <input type="date" id="dashDataFim" onchange="loadDashboards()">
                     </div>
                     <div class="form-group" style="margin:0; min-width: 180px;">
-                        <label>Times:</label>
-                        <div class="multiselect" id="msTimesGlobal">
-                            <div class="multiselect-head" onclick="toggleMs('msTimesGlobalBody')">Todos</div>
-                            <div class="multiselect-body" id="msTimesGlobalBody">
-                                <input type="text" class="ms-search" placeholder="Buscar..." onkeyup="filterMs('msTimesGlobalBody', this.value)" onclick="event.stopPropagation()">
+                        <label>Filiais:</label>
+                        <div class="multiselect" id="msFiliaisGlobal">
+                            <div class="multiselect-head" onclick="toggleMs('msFiliaisGlobalBody')">Todos</div>
+                            <div class="multiselect-body" id="msFiliaisGlobalBody">
+                                <input type="text" class="ms-search" placeholder="Buscar..." onkeyup="filterMs('msFiliaisGlobalBody', this.value)" onclick="event.stopPropagation()">
                             </div>
                         </div>
                     </div>
@@ -649,7 +649,7 @@
                     </div>
                 </div>
                 <div class="cadastro-panel">
-                    <h3 style="margin:0 0 15px 0;">Vendas por Time</h3>
+                    <h3 style="margin:0 0 15px 0;">Vendas por Filial</h3>
                     <div style="height: 350px; position: relative;">
                         <canvas id="chartTimesPie"></canvas>
                     </div>
@@ -684,11 +684,16 @@
                     <datalist id="cidadeDataList"></datalist>
                 </div>
                 <div class="form-group">
+                    <label>Filial</label>
+                    <select id="timeSelect">
+                        <option value="">Sem Filial</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label>Vendedor</label>
                     <input type="text" id="vendedorSelect" list="vendedorDataList" placeholder="Digite para buscar..." autocomplete="off">
                     <datalist id="vendedorDataList"></datalist>
                 </div>
-                <div class="form-group"><label>Time</label><input type="text" id="timeSelect" readonly style="background: rgba(255,255,255,0.05); cursor: default; border: 1px solid var(--border-color);"></div>
                 <div class="form-group"><label>Data</label><input type="date" id="data"></div>
                 <div class="form-group"><label>Placas</label><input type="text" id="placas"></div>
                 <!-- REMOVED OLD INVERSOR FIELD -->
@@ -791,48 +796,52 @@
         </div>
     </div>
 
-    <!-- MODAL TIME -->
-    <div class="modal-overlay" id="timeModal">
+    <!-- MODAL FILIAL -->
+    <div class="modal-overlay" id="filialModal">
         <div class="modal-content" style="max-width: 400px;">
             <div class="modal-header">
-                <h3 id="timeModalTitle" style="margin:0; font-weight: 300;">Novo Time</h3>
-                <button class="modal-close" onclick="closeTimeModal()">&times;</button>
+                <h3 id="filialModalTitle" style="margin:0; font-weight: 300;">Nova Filial</h3>
+                <button class="modal-close" onclick="closeFilialModal()">&times;</button>
             </div>
-            <input type="hidden" id="timeId">
+            <input type="hidden" id="filialId">
             <div class="form-group">
-                <label>Nome do Time</label>
-                <input type="text" id="timeNameInput">
+                <label>Nome da Filial</label>
+                <input type="text" id="filialNomeInput" placeholder="Ex: LUCAS DO RIO VERDE">
             </div>
             <div class="form-group">
-                <label>Líder / Responsável</label>
-                <input type="text" id="timeLiderInput">
+                <label>Código</label>
+                <input type="text" id="filialCodigoInput" placeholder="Ex: LRV">
+            </div>
+            <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="filialAtivoInput" checked style="width: auto;">
+                <label for="filialAtivoInput" style="margin: 0;">Ativo</label>
             </div>
             <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
-                <button class="btn btn-secondary" onclick="closeTimeModal()">Cancelar</button>
-                <button class="btn" onclick="saveTimeForm()">Salvar</button>
+                <button class="btn btn-secondary" onclick="closeFilialModal()">Cancelar</button>
+                <button class="btn" onclick="saveFilialForm()">Salvar</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL VIEW TIME -->
-    <div class="modal-overlay" id="timeViewModal">
+    <!-- MODAL VIEW FILIAL -->
+    <div class="modal-overlay" id="filialViewModal">
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">
-                <h3 style="margin:0; font-weight: 300;">Detalhes do Time</h3>
-                <button class="modal-close" onclick="closeTimeViewModal()">&times;</button>
+                <h3 style="margin:0; font-weight: 300;">Detalhes da Filial</h3>
+                <button class="modal-close" onclick="closeFilialViewModal()">&times;</button>
             </div>
             <div style="margin-bottom: 20px;">
-                <h2 id="viewTimeName" style="margin: 0 0 5px 0; color: var(--microsoft-blue);"></h2>
-                <p style="margin:0; color: var(--accent);">Responsável: <strong id="viewTimeLider" style="color: var(--text-light);"></strong></p>
+                <h2 id="viewFilialNome" style="margin: 0 0 5px 0; color: var(--microsoft-blue);"></h2>
+                <p style="margin:0; color: var(--accent);">Código: <strong id="viewFilialCodigo" style="color: var(--text-light);"></strong></p>
             </div>
             
-            <h4 style="border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-bottom: 15px;">Membros</h4>
-            <ul id="viewTimeMembersList" class="cadastro-list" style="max-height: 300px; overflow-y: auto;">
+            <h4 style="border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-bottom: 15px;">Vendedores</h4>
+            <ul id="viewFilialMembersList" class="cadastro-list" style="max-height: 300px; overflow-y: auto;">
                 <!-- Populated via JS -->
             </ul>
 
             <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
-                <button class="btn btn-secondary" onclick="closeTimeViewModal()">Fechar</button>
+                <button class="btn btn-secondary" onclick="closeFilialViewModal()">Fechar</button>
             </div>
         </div>
     </div>
@@ -850,9 +859,9 @@
                 <input type="text" id="vendedorNameInput">
             </div>
             <div class="form-group">
-                <label>Time</label>
+                <label>Filial</label>
                 <select id="vendedorTimeSelectInput">
-                    <option value="">Sem Time</option>
+                    <option value="">Sem Filial</option>
                 </select>
             </div>
             <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
@@ -905,39 +914,41 @@
         </div>
     </div>
 
-    <!-- Import Times Modal -->
-    <div class="modal-overlay" id="importTimesModalOverlay">
+    <!-- Import Filiais Modal -->
+    <div class="modal-overlay" id="importFiliaisModalOverlay">
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">
-                <h3 style="margin:0; font-weight: 300;">Importar Times</h3>
-                <span class="modal-close" onclick="closeImportTimesModal()">&times;</span>
+                <h3 style="margin:0; font-weight: 300;">Importar Filiais</h3>
+                <span class="modal-close" onclick="closeImportFiliaisModal()">&times;</span>
             </div>
             <div class="modal-body">
                 <p style="font-size: 0.9em; margin-bottom: 15px;">
                     Selecione um arquivo Excel (.xlsx).
-                    <br>Primeira linha ignorada. <b>Líder é obrigatório.</b>
+                    <br>Primeira linha ignorada. <b>Nome e Código são obrigatórios.</b>
                 </p>
                 <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 25px; text-align: center; border: 1px solid var(--border-color);">
                     <p style="margin: 0 0 10px 0; font-size: 0.8em; color: var(--accent); text-transform: uppercase; font-weight: bold;">Formato do Cabeçalho</p>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden; font-size: 0.8em;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden; font-size: 0.8em;">
                         <div style="background: rgba(255,255,255,0.1); color: var(--accent); padding: 8px; border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); font-weight: bold;">NOME</div>
-                        <div style="background: rgba(255,255,255,0.1); color: var(--accent); padding: 8px; border-bottom: 1px solid var(--border-color); font-weight: bold;">LÍDER</div>
-                        <div style="padding: 6px; border-right: 1px solid rgba(255,255,255,0.1);">Time Alpha</div>
-                        <div style="padding: 6px;">João Silva</div>
+                        <div style="background: rgba(255,255,255,0.1); color: var(--accent); padding: 8px; border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); font-weight: bold;">CODIGO</div>
+                        <div style="background: rgba(255,255,255,0.1); color: var(--accent); padding: 8px; border-bottom: 1px solid var(--border-color); font-weight: bold;">ATIVO</div>
+                        <div style="padding: 6px; border-right: 1px solid rgba(255,255,255,0.1);">SINOP</div>
+                        <div style="padding: 6px; border-right: 1px solid rgba(255,255,255,0.1);">SNP</div>
+                        <div style="padding: 6px;">true</div>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="importTimesFile" style="cursor: pointer; display: block; background: rgba(255,255,255,0.05); padding: 20px; text-align: center; border: 1px dashed var(--border-color); border-radius: 4px; transition: all 0.2s;">
-                        <span id="fileNameDisplayTimes">Clique para selecionar o arquivo .xlsx</span>
+                    <label for="importFiliaisFile" style="cursor: pointer; display: block; background: rgba(255,255,255,0.05); padding: 20px; text-align: center; border: 1px dashed var(--border-color); border-radius: 4px; transition: all 0.2s;">
+                        <span id="fileNameDisplayFiliais">Clique para selecionar o arquivo .xlsx</span>
                     </label>
-                    <input type="file" id="importTimesFile" accept=".xlsx" style="display: none;" onchange="updateFileNameDisplay(this, 'fileNameDisplayTimes')">
+                    <input type="file" id="importFiliaisFile" accept=".xlsx" style="display: none;" onchange="updateFileNameDisplay(this, 'fileNameDisplayFiliais')">
                 </div>
                 
                 <div style="text-align: right; margin-top: 20px;">
-                    <span id="importTimesStatus" style="font-size: 0.9em; margin-right: 15px; display: inline-block;"></span>
-                    <button class="btn btn-secondary" onclick="closeImportTimesModal()">Cancelar</button>
-                    <button class="btn" onclick="uploadTimesFile()" style="background-color: #28a745; margin-left: 10px;">Importar</button>
+                    <span id="importFiliaisStatus" style="font-size: 0.9em; margin-right: 15px; display: inline-block;"></span>
+                    <button class="btn btn-secondary" onclick="closeImportFiliaisModal()">Cancelar</button>
+                    <button class="btn" onclick="uploadFiliaisFile()" style="background-color: #28a745; margin-left: 10px;">Importar</button>
                 </div>
             </div>
         </div>
@@ -959,9 +970,9 @@
                     <p style="margin: 0 0 10px 0; font-size: 0.8em; color: var(--accent); text-transform: uppercase; font-weight: bold;">Formato do Cabeçalho</p>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden; font-size: 0.8em;">
                         <div style="background: rgba(255,255,255,0.1); color: var(--accent); padding: 8px; border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); font-weight: bold;">NOME</div>
-                        <div style="background: rgba(255,255,255,0.1); color: var(--accent); padding: 8px; border-bottom: 1px solid var(--border-color); font-weight: bold;">TIME</div>
+                        <div style="background: rgba(255,255,255,0.1); color: var(--accent); padding: 8px; border-bottom: 1px solid var(--border-color); font-weight: bold;">FILIAL</div>
                         <div style="padding: 6px; border-right: 1px solid rgba(255,255,255,0.1);">Carlos Sales</div>
-                        <div style="padding: 6px;">Time Beta</div>
+                        <div style="padding: 6px;">SINOP</div>
                     </div>
                 </div>
 
@@ -1042,8 +1053,8 @@
                 overlay.addEventListener('click', (e) => {
                     if (e.target === overlay) {
                         closeModal();
-                        closeTimeModal();
-                        closeTimeViewModal();
+                        closeFilialModal();
+                        closeFilialViewModal();
                         closeVendedorModal();
                         closeProdutoModal(); // NEW
                     }
@@ -1150,7 +1161,7 @@
             const vendSel = document.getElementById('vendedorSelect');
             vendSel.value = venda.vendedor || '';
             
-            document.getElementById('timeSelect').value = venda.time || '';
+            document.getElementById('timeSelect').value = venda.filial || '';
 
             document.getElementById('data').value = venda.data || '';
             document.getElementById('placas').value = venda.placas || '';
@@ -1323,7 +1334,7 @@
             updateInverterTable();
         }
 
-        let _CACHE_TIMES = [];
+        let _CACHE_FILIAIS = [];
         let _CACHE_VENDEDORES = [];
 
         async function loadUFs() {
@@ -1369,39 +1380,26 @@
             loadUFs(); // Initialize UFs
 
             try {
-                const [vendedores, times] = await Promise.all([
-                    fetch('/api/vendas/vendedores').then(r => r.json()),
-                    fetch('/api/vendas/times').then(r => r.json())
+                const [vendedores, filiais] = await Promise.all([
+                    fetch('/api/vendas/vendedores-mg').then(r => r.json()),
+                    fetch('/api/vendas/filiais').then(r => r.json())
                 ]);
 
-                _CACHE_TIMES = times;
+                _CACHE_FILIAIS = filiais;
                 _CACHE_VENDEDORES = vendedores;
 
                 const vSel = document.getElementById('vendedorSelect');
                 const vDataList = document.getElementById('vendedorDataList');
-                const tSel = document.getElementById('timeSelect');
-                const vTimeSel = document.getElementById('vendedorTimeSelectInput');
+                const filialSel = document.getElementById('timeSelect'); // Select de filial no formulário de venda
+                const vFilialSel = document.getElementById('vendedorTimeSelectInput'); // Select de filial no modal de vendedor
                 const vList = document.getElementById('vendedoresList');
-                const tList = document.getElementById('timesList');
+                const fList = document.getElementById('filiaisList');
 
                 vDataList.innerHTML = '';
-                // tSel (Time) is now an input, handled automatically
-                vTimeSel.innerHTML = '<option value="">Sem Time</option>';
+                filialSel.innerHTML = '<option value="">Sem Filial</option>';
+                vFilialSel.innerHTML = '<option value="">Sem Filial</option>';
                 vList.innerHTML = '';
-                tList.innerHTML = '';
-
-                // Listen for Seller change to update Time
-                // Use 'input' event for datalist to react faster or keep 'change'
-                vSel.onchange = function() {
-                    const selName = this.value;
-                    const vendor = _CACHE_VENDEDORES.find(v => v.nome === selName);
-                    const tInput = document.getElementById('timeSelect');
-                    if (vendor && vendor.time) {
-                        tInput.value = vendor.time.nome;
-                    } else {
-                        tInput.value = '';
-                    }
-                };
+                fList.innerHTML = '';
 
                 // Populate Vendedor Datalist
                 vendedores.forEach(v => {
@@ -1410,46 +1408,47 @@
                     vDataList.appendChild(opt);
                 });
 
-                times.forEach(t => {
-                    // Dropdown for Time - Removed (now automatic)
-
+                filiais.forEach(f => {
+                    // Formulário de Venda - Select de Filial
+                    const optVenda = document.createElement('option');
+                    optVenda.value = f.nome;
+                    optVenda.innerText = f.nome;
+                    filialSel.appendChild(optVenda);
+                    
                     // Vendedor Modal Dropdown
                     const optV = document.createElement('option');
-                    optV.value = t.id;
-                    optV.innerText = t.nome;
-                    vTimeSel.appendChild(optV);
+                    optV.value = f.id;
+                    optV.innerText = f.nome;
+                    vFilialSel.appendChild(optV);
 
                     // List
                     const li = document.createElement('li');
                     li.className = 'cadastro-item';
-                    const safeName = t.nome.replace(/'/g, "\\'");
-                    const safeLider = (t.lider || '').replace(/'/g, "\\'");
+                    const safeName = f.nome.replace(/'/g, "\\'");
+                    const safeCodigo = (f.codigo || '').replace(/'/g, "\\'");
                     li.innerHTML = `
                         <div style="display:flex; flex-direction:column;">
-                            <span style="font-weight:600;">${t.nome}</span>
-                            <span style="font-size:0.8em; color:var(--accent);">Líder: ${t.lider || '-'}</span>
+                            <span style="font-weight:600;">${f.nome}</span>
+                            <span style="font-size:0.8em; color:var(--accent);">Código: ${f.codigo || '-'} ${f.ativo ? '✓' : '✗'}</span>
                         </div>
                         <div style="display:flex; align-items:center;">
-                            <button class="btn btn-secondary" onclick="openTimeViewModal(${t.id})" style="padding: 2px 8px; margin-right: 5px; font-size:12px;" title="Ver detalhes">👁</button>
-                            <button class="btn btn-secondary" onclick="openTimeModal(${t.id}, '${safeName}', '${safeLider}')" style="padding: 2px 8px; margin-right: 5px; font-size:12px;">✎</button>
-                            <button class="btn-delete" onclick="deleteTime(${t.id})">&times;</button>
+                            <button class="btn btn-secondary" onclick="openFilialModal(${f.id}, '${safeName}', '${safeCodigo}', ${f.ativo})" style="padding: 2px 8px; margin-right: 5px; font-size:12px;">✎</button>
+                            <button class="btn-delete" onclick="deleteFilial(${f.id})">&times;</button>
                         </div>
                     `;
-                    tList.appendChild(li);
+                    fList.appendChild(li);
                 });
 
                 vendedores.forEach(v => {
-                    // Dropdown (DataList populated above)
-                    
                     // List
                     const li = document.createElement('li');
                     li.className = 'cadastro-item';
                     const safeName = v.nome.replace(/'/g, "\\'");
-                    const timeId = (v.time && v.time.id) ? v.time.id : '';
+                    const filialId = (v.filial && v.filial.id) ? v.filial.id : '';
                     li.innerHTML = `
-                        <span>${v.nome} <small style="color:var(--accent); margin-left:5px;">(${v.time ? v.time.nome : '-'})</small></span> 
+                        <span>${v.nome} <small style="color:var(--accent); margin-left:5px;">(${v.filial ? v.filial.nome : '-'})</small></span> 
                         <div>
-                            <button class="btn btn-secondary" onclick="openVendedorModal(${v.id}, '${safeName}', '${timeId}')" style="padding: 2px 8px; margin-right: 5px; font-size:12px;">✎</button>
+                            <button class="btn btn-secondary" onclick="openVendedorModal(${v.id}, '${safeName}', ${filialId})" style="padding: 2px 8px; margin-right: 5px; font-size:12px;">✎</button>
                             <button class="btn-delete" onclick="deleteVendedor(${v.id})">&times;</button>
                         </div>
                     `;
@@ -1462,57 +1461,59 @@
             } catch(e) { console.error("Erro ao carregar auxiliares", e); }
         }
 
-        // --- CRUD Times ---
-        function openTimeModal(id = null, name = '', lider = '') {
-            document.getElementById('timeId').value = id || '';
-            document.getElementById('timeNameInput').value = name;
-            document.getElementById('timeLiderInput').value = lider;
-            document.getElementById('timeModalTitle').innerText = id ? 'Editar Time' : 'Novo Time';
-            document.getElementById('timeModal').classList.add('modal-active');
+        // --- CRUD Filiais ---
+        function openFilialModal(id = null, nome = '', codigo = '', ativo = true) {
+            document.getElementById('filialId').value = id || '';
+            document.getElementById('filialNomeInput').value = nome;
+            document.getElementById('filialCodigoInput').value = codigo;
+            document.getElementById('filialAtivoInput').checked = ativo;
+            document.getElementById('filialModalTitle').innerText = id ? 'Editar Filial' : 'Nova Filial';
+            document.getElementById('filialModal').classList.add('modal-active');
         }
 
-        function closeTimeModal() {
-            document.getElementById('timeModal').classList.remove('modal-active');
+        function closeFilialModal() {
+            document.getElementById('filialModal').classList.remove('modal-active');
         }
 
-        async function saveTimeForm() {
-            const id = document.getElementById('timeId').value;
-            const name = document.getElementById('timeNameInput').value;
-            const lider = document.getElementById('timeLiderInput').value;
-            if(!name) return;
+        async function saveFilialForm() {
+            const id = document.getElementById('filialId').value;
+            const nome = document.getElementById('filialNomeInput').value;
+            const codigo = document.getElementById('filialCodigoInput').value;
+            const ativo = document.getElementById('filialAtivoInput').checked;
+            if(!nome) return alert('Nome da filial é obrigatório');
 
             const method = id ? 'PUT' : 'POST';
-            const url = id ? `/api/vendas/times/${id}` : '/api/vendas/times';
+            const url = id ? `/api/vendas/filiais/${id}` : '/api/vendas/filiais';
 
             try {
                 const resp = await fetch(url, {
                     method: method,
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ nome: name, lider: lider })
+                    body: JSON.stringify({ nome: nome, codigo: codigo, ativo: ativo })
                 });
                 if(resp.ok) {
-                    closeTimeModal();
+                    closeFilialModal();
                     loadAuxData();
                 } else {
-                    alert('Erro ao salvar time.');
+                    alert('Erro ao salvar filial.');
                 }
             } catch(e) { alert('Erro: ' + e); }
         }
 
         // --- View & Details ---
-        function openTimeViewModal(timeId) {
-            const time = _CACHE_TIMES.find(t => t.id === timeId);
-            if(!time) return;
+        function openFilialViewModal(filialId) {
+            const filial = _CACHE_FILIAIS.find(f => f.id === filialId);
+            if(!filial) return;
 
-            document.getElementById('viewTimeName').innerText = time.nome;
-            document.getElementById('viewTimeLider').innerText = time.lider || 'Não definido';
+            document.getElementById('viewFilialNome').innerText = filial.nome;
+            document.getElementById('viewFilialCodigo').innerText = filial.codigo || 'Não definido';
             
-            const members = _CACHE_VENDEDORES.filter(v => v.time && v.time.id === timeId);
-            const listEl = document.getElementById('viewTimeMembersList');
+            const members = _CACHE_VENDEDORES.filter(v => v.filial && v.filial.id === filialId);
+            const listEl = document.getElementById('viewFilialMembersList');
             listEl.innerHTML = ''; // clear
 
             if(members.length === 0) {
-                listEl.innerHTML = '<li style="padding:10px; color:#aaa; font-style:italic;">Nenhum membro cadastrado neste time.</li>';
+                listEl.innerHTML = '<li style="padding:10px; color:#aaa; font-style:italic;">Nenhum vendedor cadastrado nesta filial.</li>';
             } else {
                 members.forEach(m => {
                     const li = document.createElement('li');
@@ -1522,26 +1523,26 @@
                 });
             }
 
-            document.getElementById('timeViewModal').classList.add('modal-active');
+            document.getElementById('filialViewModal').classList.add('modal-active');
         }
 
-        function closeTimeViewModal() {
-            document.getElementById('timeViewModal').classList.remove('modal-active');
+        function closeFilialViewModal() {
+            document.getElementById('filialViewModal').classList.remove('modal-active');
         }
 
-        async function deleteTime(id) {
-            if(!confirm('Deseja excluir este time?')) return;
+        async function deleteFilial(id) {
+            if(!confirm('Deseja excluir esta filial?')) return;
             try {
-                await fetch(`/api/vendas/times/${id}`, { method: 'DELETE' });
+                await fetch(`/api/vendas/filiais/${id}`, { method: 'DELETE' });
                 loadAuxData();
-            } catch(e) { alert('Erro ao excluir time'); }
+            } catch(e) { alert('Erro ao excluir filial'); }
         }
 
         // --- CRUD Vendedores ---
-        function openVendedorModal(id = null, name = '', timeId = '') {
+        function openVendedorModal(id = null, name = '', filialId = '') {
             document.getElementById('vendedorId').value = id || '';
             document.getElementById('vendedorNameInput').value = name;
-            document.getElementById('vendedorTimeSelectInput').value = timeId;
+            document.getElementById('vendedorTimeSelectInput').value = filialId;
             document.getElementById('vendedorModalTitle').innerText = id ? 'Editar Vendedor' : 'Novo Vendedor';
             document.getElementById('vendedorModal').classList.add('modal-active');
         }
@@ -1553,16 +1554,16 @@
         async function saveVendedorForm() {
             const id = document.getElementById('vendedorId').value;
             const name = document.getElementById('vendedorNameInput').value;
-            const timeId = document.getElementById('vendedorTimeSelectInput').value;
+            const filialId = document.getElementById('vendedorTimeSelectInput').value;
             
             if(!name) return;
 
             const method = id ? 'PUT' : 'POST';
-            const url = id ? `/api/vendas/vendedores/${id}` : '/api/vendas/vendedores';
+            const url = id ? `/api/vendas/vendedores-mg/${id}` : '/api/vendas/vendedores-mg';
             
             const payload = {
                 nome: name,
-                time: timeId ? { id: timeId } : null
+                filial: filialId ? { id: filialId } : null
             };
 
             try {
@@ -1583,7 +1584,7 @@
         async function deleteVendedor(id) {
             if(!confirm('Deseja excluir este vendedor?')) return;
             try {
-                await fetch(`/api/vendas/vendedores/${id}`, { method: 'DELETE' });
+                await fetch(`/api/vendas/vendedores-mg/${id}`, { method: 'DELETE' });
                 loadAuxData();
             } catch(e) { alert('Erro ao excluir vendedor'); }
         }
@@ -1653,7 +1654,7 @@
                     <td>${formatMoney(v.valorMaterial)}</td>
                     <td>${formatMoney(v.valorBruto)}</td>
                     <td>${formatMarkup(v.markup)}</td>
-                    <td>${v.time || ''}</td>
+                    <td>${v.filial || ''}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -1776,7 +1777,7 @@
                 cidade: document.getElementById('cidade').value,
                 estado: document.getElementById('estado').value,
                 vendedor: document.getElementById('vendedorSelect').value,
-                time: document.getElementById('timeSelect').value,
+                filial: document.getElementById('timeSelect').value,
                 data: document.getElementById('data').value || null,
                 placas: document.getElementById('placas').value,
                 inversor: inverterString, // Set legacy string
@@ -1989,20 +1990,20 @@
         }
 
         // --- Import Times ---
-        function openImportTimesModal() {
-            document.getElementById('importTimesModalOverlay').style.display = 'flex';
-            document.getElementById('importTimesFile').value = '';
-            document.getElementById('importTimesStatus').innerText = '';
-            updateFileNameDisplay(document.getElementById('importTimesFile'), 'fileNameDisplayTimes');
+        function openImportFiliaisModal() {
+            document.getElementById('importFiliaisModalOverlay').style.display = 'flex';
+            document.getElementById('importFiliaisFile').value = '';
+            document.getElementById('importFiliaisStatus').innerText = '';
+            updateFileNameDisplay(document.getElementById('importFiliaisFile'), 'fileNameDisplayFiliais');
         }
 
-        function closeImportTimesModal() {
-            document.getElementById('importTimesModalOverlay').style.display = 'none';
+        function closeImportFiliaisModal() {
+            document.getElementById('importFiliaisModalOverlay').style.display = 'none';
         }
 
-        async function uploadTimesFile() {
-             const fileInput = document.getElementById('importTimesFile');
-            const status = document.getElementById('importTimesStatus');
+        async function uploadFiliaisFile() {
+             const fileInput = document.getElementById('importFiliaisFile');
+            const status = document.getElementById('importFiliaisStatus');
             
             if(fileInput.files.length === 0) { alert("Selecione um arquivo!"); return; }
             
@@ -2013,11 +2014,11 @@
             status.style.color = "#ccc";
 
              try {
-                const response = await fetch('/api/vendas/times/upload', { method: 'POST', body: formData });
+                const response = await fetch('/api/vendas/filiais/upload', { method: 'POST', body: formData });
                 if (response.ok) {
                     status.innerText = await response.text();
                     status.style.color = "lightgreen";
-                    setTimeout(() => { closeImportTimesModal(); loadTimes(); }, 1500);
+                    setTimeout(() => { closeImportFiliaisModal(); loadAuxData(); }, 1500);
                 } else {
                     const txt = await response.text();
                     status.innerText = txt;
@@ -2053,7 +2054,7 @@
             status.style.color = "#ccc";
 
              try {
-                const response = await fetch('/api/vendas/vendedores/upload', { method: 'POST', body: formData });
+                const response = await fetch('/api/vendas/vendedores-mg/upload', { method: 'POST', body: formData });
                 if (response.ok) {
                     status.innerText = await response.text();
                     status.style.color = "lightgreen";
@@ -2082,7 +2083,7 @@
             status.style.color = "#ccc";
 
             try {
-                const response = await fetch('/api/vendas/produtos/upload', {
+                const response = await fetch('/api/vendas/produtos-mg/upload', {
                     method: 'POST',
                     body: formData
                 });
@@ -2106,7 +2107,7 @@
 
         async function loadProdutos() {
             try {
-                const response = await fetch('/api/vendas/produtos');
+                const response = await fetch('/api/vendas/produtos-mg');
                 if(!response.ok) return; // NoContent or Error
                 const text = await response.text();
                 if(!text) return; // No content
@@ -2214,7 +2215,7 @@
             if(!descricao) { alert('Descrição é obrigatória'); return; }
 
             const method = id ? 'PUT' : 'POST';
-            const url = id ? `/api/vendas/produtos/${id}` : '/api/vendas/produtos';
+            const url = id ? `/api/vendas/produtos-mg/${id}` : '/api/vendas/produtos-mg';
             
             const payload = {
                 descricao: descricao,
@@ -2240,7 +2241,7 @@
         async function deleteProduto(id) {
             if(!confirm('Deseja excluir este produto?')) return;
             try {
-                await fetch(`/api/vendas/produtos/${id}`, { method: 'DELETE' });
+                await fetch(`/api/vendas/produtos-mg/${id}`, { method: 'DELETE' });
                 loadProdutos();
             } catch(e) { alert('Erro ao excluir produto'); }
         }
@@ -2260,16 +2261,16 @@
 
         async function initDashboardFilters() {
             // Ensure Times and Vendedores are loaded
-            if (_CACHE_TIMES.length === 0) {
+            if (_CACHE_FILIAIS.length === 0) {
                 try {
-                    const times = await fetch('/api/vendas/times').then(r => r.json());
-                    _CACHE_TIMES = times;
-                } catch(e) { console.error('Erro loading times', e); }
+                    const filiais = await fetch('/api/vendas/filiais').then(r => r.json());
+                    _CACHE_FILIAIS = filiais;
+                } catch(e) { console.error('Erro loading filiais', e); }
             }
             
             if (_CACHE_VENDEDORES.length === 0) {
                 try {
-                    const vendedores = await fetch('/api/vendas/vendedores').then(r => r.json());
+                    const vendedores = await fetch('/api/vendas/vendedores-mg').then(r => r.json());
                     _CACHE_VENDEDORES = vendedores;
                 } catch(e) { console.error('Erro loading vendedores', e); }
             }
@@ -2283,17 +2284,17 @@
             }
 
             // Init Global Multi-Select (Top Filters) - Use unique vendors from sales
-            const msTimesGlobalBody = document.getElementById('msTimesGlobalBody');
-            if (msTimesGlobalBody && msTimesGlobalBody.querySelectorAll('label').length === 0) {
-                 const timesWithSemTime = [..._CACHE_TIMES.map(t => t.nome), 'Sem Time'];
-                 setupMultiSelect('msTimesGlobalBody', timesWithSemTime, onTimesFilterChange);
+            const msFiliaisGlobalBody = document.getElementById('msFiliaisGlobalBody');
+            if (msFiliaisGlobalBody && msFiliaisGlobalBody.querySelectorAll('label').length === 0) {
+                 const filiaisWithSemFilial = [..._CACHE_FILIAIS.map(f => f.nome), 'Sem Filial'];
+                 setupMultiSelect('msFiliaisGlobalBody', filiaisWithSemFilial, onFiliaisFilterChange);
                  setupMultiSelect('msVensGlobalBody', _CACHE_VENDEDORES_UNICOS, onVendorsFilterChange);
             }
             
             // Populate Groups/Products for the new filters
             if (_CACHE_GRUPOS.length === 0) {
                 try {
-                    const prods = await fetch('/api/vendas/produtos').then(r => r.json());
+                    const prods = await fetch('/api/vendas/produtos-mg').then(r => r.json());
                     _CACHE_PRODUTOS_FULL = prods;
                     // Groups (include "Não Especificado" for old sales without products)
                     _CACHE_GRUPOS = [...new Set(prods.map(p => p.grupo).filter(g => g))];
@@ -2375,11 +2376,11 @@
              if (fim) params.push(`fim=${fim}`);
              
              // Add Multi-select Filters from GLOBAL selectors
-             const selectedTimes = getCheckedValues('msTimesGlobalBody');
-             if (selectedTimes.length > 0) {
-                 selectedTimes.forEach(t => {
-                     params.push(`times=${encodeURIComponent(t)}`);
-                     queryStringMensal += `&times=${encodeURIComponent(t)}`;
+             const selectedFiliais = getCheckedValues('msFiliaisGlobalBody');
+             if (selectedFiliais.length > 0) {
+                 selectedFiliais.forEach(f => {
+                     params.push(`filiais=${encodeURIComponent(f)}`);
+                     queryStringMensal += `&filiais=${encodeURIComponent(f)}`;
                  });
              }
  
@@ -2495,7 +2496,7 @@
             document.getElementById('dashDataFim').value = formatDate(lastDay);
             
             // Clear all multiselect checkboxes
-            ['msTimesGlobalBody', 'msVensGlobalBody', 'msGruposBody', 'msProdsBody'].forEach(id => {
+            ['msFiliaisGlobalBody', 'msVensGlobalBody', 'msGruposBody', 'msProdsBody'].forEach(id => {
                 const container = document.getElementById(id);
                 if(container) {
                     container.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
@@ -2577,7 +2578,7 @@
             
             const checked = container.querySelectorAll('input:checked');
             if (checked.length === 0) {
-                if (containerId.includes('Times')) head.innerText = 'Todos';
+                if (containerId.includes('Filiais')) head.innerText = 'Todos';
                 else if (containerId.includes('Vens')) head.innerText = 'Todos';
                 else if (containerId.includes('Grupos')) head.innerText = 'Todos';
                 else if (containerId.includes('Prods')) head.innerText = 'Todos';
@@ -2600,26 +2601,26 @@
             loadFilteredCharts();
         }
 
-        function onTimesFilterChange() {
-            updateMsLabel('msTimesGlobalBody');
+        function onFiliaisFilterChange() {
+            updateMsLabel('msFiliaisGlobalBody');
             
-            const selectedTimes = getCheckedValues('msTimesGlobalBody');
+            const selectedFiliais = getCheckedValues('msFiliaisGlobalBody');
             const msVensBody = document.getElementById('msVensGlobalBody');
             
-            // Filter vendors based on selected times
+            // Filter vendors based on selected filiais
             let filteredVendors;
-            if (selectedTimes.length === 0) {
+            if (selectedFiliais.length === 0) {
                 // Default: Show All unique vendors from sales
                 filteredVendors = _CACHE_VENDEDORES_UNICOS;
             } else {
-                // If "Sem Time" is selected, show ALL vendors (backend will filter by time IS NULL)
-                if (selectedTimes.includes('Sem Time')) {
+                // If "Sem Filial" is selected, show ALL vendors (backend will filter by filial IS NULL)
+                if (selectedFiliais.includes('Sem Filial')) {
                     filteredVendors = _CACHE_VENDEDORES_UNICOS;
                 } else {
-                    // Show only vendors belonging to these times (from registered vendors)
+                    // Show only vendors belonging to these filiais (from registered vendors)
                     const sellers = _CACHE_VENDEDORES.filter(v => {
-                        const tName = v.time ? v.time.nome : null;
-                        return tName && selectedTimes.includes(tName); 
+                        const fName = v.filial ? v.filial.nome : null;
+                        return fName && selectedFiliais.includes(fName); 
                     });
                     filteredVendors = sellers.map(v => v.nome);
                 }
@@ -2628,8 +2629,8 @@
             // Re-populate Vendors Dropdown
             setupMultiSelect('msVensGlobalBody', filteredVendors, onVendorsFilterChange);
             
-            // If we have selected times, Auto-Check these vendors
-            if (selectedTimes.length > 0) {
+            // If we have selected filiais, Auto-Check these vendors
+            if (selectedFiliais.length > 0) {
                 const checkboxes = msVensBody.querySelectorAll('input[type="checkbox"]');
                 checkboxes.forEach(cb => cb.checked = true);
                 updateMsLabel('msVensGlobalBody');

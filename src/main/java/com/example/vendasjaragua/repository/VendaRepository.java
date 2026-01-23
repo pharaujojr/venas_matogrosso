@@ -16,15 +16,15 @@ import java.util.List;
 @Repository
 public interface VendaRepository extends JpaRepository<Venda, Long>, VendaRepositoryCustom {
 
-    @Query("SELECT v.vendedor, SUM(v.valorVenda) FROM Venda v WHERE v.data BETWEEN :inicio AND :fim AND ((:times) IS NULL OR v.time IN (:times)) AND ((:vendedores) IS NULL OR v.vendedor IN (:vendedores)) GROUP BY v.vendedor ORDER BY SUM(v.valorVenda) DESC")
-    List<Object[]> findVendasPorVendedor(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim, @Param("times") List<String> times, @Param("vendedores") List<String> vendedores);
+    @Query("SELECT v.vendedor, SUM(v.valorVenda) FROM Venda v WHERE v.data BETWEEN :inicio AND :fim AND ((:filiais) IS NULL OR v.time IN (:filiais)) AND ((:vendedores) IS NULL OR v.vendedor IN (:vendedores)) GROUP BY v.vendedor ORDER BY SUM(v.valorVenda) DESC")
+    List<Object[]> findVendasPorVendedor(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim, @Param("filiais") List<String> filiais, @Param("vendedores") List<String> vendedores);
 
 
-    @Query("SELECT v.time, SUM(v.valorVenda) FROM Venda v WHERE v.data BETWEEN :inicio AND :fim GROUP BY v.time ORDER BY SUM(v.valorVenda) DESC")
+    @Query("SELECT v.time, SUM(v.valorVenda) FROM Venda v WHERE v.data BETWEEN :inicio AND :fim AND v.ganho = true GROUP BY v.time ORDER BY SUM(v.valorVenda) DESC")
     List<Object[]> findVendasPorTime(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
 
-    @Query("SELECT v.vendedor, SUM(v.valorVenda) FROM Venda v WHERE v.time = :time AND v.data BETWEEN :inicio AND :fim GROUP BY v.vendedor ORDER BY SUM(v.valorVenda) DESC")
-    List<Object[]> findVendasPorVendedorAndTime(@Param("time") String time, @Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
+    @Query("SELECT v.vendedor, SUM(v.valorVenda) FROM Venda v WHERE v.time = :filial AND v.data BETWEEN :inicio AND :fim GROUP BY v.vendedor ORDER BY SUM(v.valorVenda) DESC")
+    List<Object[]> findVendasPorVendedorAndTime(@Param("filial") String filial, @Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
 
     @Query("SELECT v.vendedor, SUM(v.valorVenda) FROM Venda v WHERE v.time IS NULL AND v.data BETWEEN :inicio AND :fim GROUP BY v.vendedor ORDER BY SUM(v.valorVenda) DESC")
     List<Object[]> findVendasPorVendedorWhereTimeIsNull(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
@@ -48,7 +48,10 @@ public interface VendaRepository extends JpaRepository<Venda, Long>, VendaReposi
            "(LOWER(v.cliente) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            " LOWER(v.vendedor) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            " LOWER(v.nf) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           " LOWER(v.ov) LIKE LOWER(CONCAT('%', :search, '%')))")
+           " LOWER(v.ov) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.telefone) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.cidade) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.email) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Venda> searchVendas(@Param("startDate") LocalDate startDate, 
                              @Param("endDate") LocalDate endDate, 
                              @Param("search") String search, 

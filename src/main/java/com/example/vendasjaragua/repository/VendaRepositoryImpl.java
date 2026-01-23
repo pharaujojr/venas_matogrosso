@@ -29,13 +29,13 @@ public class VendaRepositoryImpl implements VendaRepositoryCustom {
         sql.append("SELECT COALESCE(NULLIF(TRIM(p.grupo), ''), 'Não Especificado') as grupo, ");
         sql.append("SUM(CAST(COALESCE(NULLIF(item->>'valorUnitarioVenda', ''), '0') AS NUMERIC) * ");
         sql.append("CAST(COALESCE(NULLIF(item->>'quantidade', ''), '0') AS INTEGER)) as total ");
-        sql.append("FROM vendas_jaragua v ");
+        sql.append("FROM financeiro_clientes v ");
         sql.append("CROSS JOIN jsonb_array_elements(COALESCE(v.produto, CAST('[]' AS jsonb))) AS item ");
-        sql.append("LEFT JOIN jaragua_produtos p ON item->>'nomeProduto' = p.descricao ");
-        sql.append("WHERE v.data_venda BETWEEN :dataInicio AND :dataFim ");
+        sql.append("LEFT JOIN matogrosso_produtos p ON item->>'nomeProduto' = p.descricao ");
+        sql.append("WHERE v.data BETWEEN :dataInicio AND :dataFim ");
         
         if (times != null && !times.isEmpty()) {
-            sql.append("AND v.time IN (:times) ");
+            sql.append("AND v.filial IN (:times) ");
         }
         if (vendedores != null && !vendedores.isEmpty()) {
             sql.append("AND v.vendedor IN (:vendedores) ");
@@ -81,26 +81,17 @@ public class VendaRepositoryImpl implements VendaRepositoryCustom {
             List<String> produtos) {
         
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT TO_CHAR(v.data_venda, 'YYYY-MM') as mes, ");
-        sql.append("SUM(CAST(COALESCE(NULLIF(item->>'valorUnitarioVenda', ''), '0') AS NUMERIC) * ");
-        sql.append("CAST(COALESCE(NULLIF(item->>'quantidade', ''), '0') AS INTEGER)) as total ");
-        sql.append("FROM vendas_jaragua v ");
-        sql.append("CROSS JOIN jsonb_array_elements(COALESCE(v.produto, CAST('[]' AS jsonb))) AS item ");
-        sql.append("LEFT JOIN jaragua_produtos p ON item->>'nomeProduto' = p.descricao ");
-        sql.append("WHERE v.data_venda BETWEEN :dataInicio AND :dataFim ");
+        sql.append("SELECT TO_CHAR(v.data, 'YYYY-MM') as mes, ");
+        sql.append("SUM(COALESCE(v.valor_debito, 0)) as total ");
+        sql.append("FROM financeiro_clientes v ");
+        sql.append("WHERE v.data BETWEEN :dataInicio AND :dataFim ");
+        sql.append("AND v.ganho = true ");
         
         if (times != null && !times.isEmpty()) {
-            sql.append("AND v.time IN (:times) ");
+            sql.append("AND v.filial IN (:times) ");
         }
         if (vendedores != null && !vendedores.isEmpty()) {
             sql.append("AND v.vendedor IN (:vendedores) ");
-        }
-        if (grupos != null && !grupos.isEmpty()) {
-            sql.append("AND (p.grupo IN (:grupos) OR ");
-            sql.append("(COALESCE(p.grupo, '') = '' AND 'Não Especificado' IN (:grupos))) ");
-        }
-        if (produtos != null && !produtos.isEmpty()) {
-            sql.append("AND item->>'nomeProduto' IN (:produtos) ");
         }
         
         sql.append("GROUP BY mes ");
@@ -112,8 +103,6 @@ public class VendaRepositoryImpl implements VendaRepositoryCustom {
         
         if (times != null && !times.isEmpty()) query.setParameter("times", times);
         if (vendedores != null && !vendedores.isEmpty()) query.setParameter("vendedores", vendedores);
-        if (grupos != null && !grupos.isEmpty()) query.setParameter("grupos", grupos);
-        if (produtos != null && !produtos.isEmpty()) query.setParameter("produtos", produtos);
         
         List<Object[]> results = query.getResultList();
         List<Map<String, Object>> mapped = new ArrayList<>();
@@ -136,28 +125,15 @@ public class VendaRepositoryImpl implements VendaRepositoryCustom {
             List<String> produtos) {
         
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT COUNT(DISTINCT v.id) FROM vendas_jaragua v ");
-        
-        // Se filtrar grupos ou produtos, precisa do CROSS JOIN
-        if ((grupos != null && !grupos.isEmpty()) || (produtos != null && !produtos.isEmpty())) {
-            sql.append("CROSS JOIN jsonb_array_elements(COALESCE(v.produto, CAST('[]' AS jsonb))) AS item ");
-            sql.append("LEFT JOIN jaragua_produtos p ON item->>'nomeProduto' = p.descricao ");
-        }
-        
-        sql.append("WHERE v.data_venda BETWEEN :dataInicio AND :dataFim ");
+        sql.append("SELECT COUNT(v.id) FROM financeiro_clientes v ");
+        sql.append("WHERE v.data BETWEEN :dataInicio AND :dataFim ");
+        sql.append("AND v.ganho = true ");
         
         if (times != null && !times.isEmpty()) {
-            sql.append("AND v.time IN (:times) ");
+            sql.append("AND v.filial IN (:times) ");
         }
         if (vendedores != null && !vendedores.isEmpty()) {
             sql.append("AND v.vendedor IN (:vendedores) ");
-        }
-        if (grupos != null && !grupos.isEmpty()) {
-            sql.append("AND (p.grupo IN (:grupos) OR ");
-            sql.append("(COALESCE(p.grupo, '') = '' AND 'Não Especificado' IN (:grupos))) ");
-        }
-        if (produtos != null && !produtos.isEmpty()) {
-            sql.append("AND item->>'nomeProduto' IN (:produtos) ");
         }
         
         var query = entityManager.createNativeQuery(sql.toString());
@@ -166,8 +142,6 @@ public class VendaRepositoryImpl implements VendaRepositoryCustom {
         
         if (times != null && !times.isEmpty()) query.setParameter("times", times);
         if (vendedores != null && !vendedores.isEmpty()) query.setParameter("vendedores", vendedores);
-        if (grupos != null && !grupos.isEmpty()) query.setParameter("grupos", grupos);
-        if (produtos != null && !produtos.isEmpty()) query.setParameter("produtos", produtos);
         
         return ((Number) query.getSingleResult()).longValue();
     }
@@ -183,25 +157,16 @@ public class VendaRepositoryImpl implements VendaRepositoryCustom {
         
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT v.vendedor, ");
-        sql.append("SUM(CAST(COALESCE(NULLIF(item->>'valorUnitarioVenda', ''), '0') AS NUMERIC) * ");
-        sql.append("CAST(COALESCE(NULLIF(item->>'quantidade', ''), '0') AS INTEGER)) as total ");
-        sql.append("FROM vendas_jaragua v ");
-        sql.append("CROSS JOIN jsonb_array_elements(COALESCE(v.produto, CAST('[]' AS jsonb))) AS item ");
-        sql.append("LEFT JOIN jaragua_produtos p ON item->>'nomeProduto' = p.descricao ");
-        sql.append("WHERE v.data_venda BETWEEN :dataInicio AND :dataFim ");
+        sql.append("SUM(COALESCE(v.valor_debito, 0)) as total ");
+        sql.append("FROM financeiro_clientes v ");
+        sql.append("WHERE v.data BETWEEN :dataInicio AND :dataFim ");
+        sql.append("AND v.ganho = true ");
         
         if (times != null && !times.isEmpty()) {
-            sql.append("AND v.time IN (:times) ");
+            sql.append("AND v.filial IN (:times) ");
         }
         if (vendedores != null && !vendedores.isEmpty()) {
             sql.append("AND v.vendedor IN (:vendedores) ");
-        }
-        if (grupos != null && !grupos.isEmpty()) {
-            sql.append("AND (p.grupo IN (:grupos) OR ");
-            sql.append("(COALESCE(p.grupo, '') = '' AND 'Não Especificado' IN (:grupos))) ");
-        }
-        if (produtos != null && !produtos.isEmpty()) {
-            sql.append("AND item->>'nomeProduto' IN (:produtos) ");
         }
         
         sql.append("GROUP BY v.vendedor ");
@@ -213,8 +178,6 @@ public class VendaRepositoryImpl implements VendaRepositoryCustom {
         
         if (times != null && !times.isEmpty()) query.setParameter("times", times);
         if (vendedores != null && !vendedores.isEmpty()) query.setParameter("vendedores", vendedores);
-        if (grupos != null && !grupos.isEmpty()) query.setParameter("grupos", grupos);
-        if (produtos != null && !produtos.isEmpty()) query.setParameter("produtos", produtos);
         
         List<Object[]> results = query.getResultList();
         List<Map<String, Object>> mapped = new ArrayList<>();
