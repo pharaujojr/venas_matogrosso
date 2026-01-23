@@ -684,9 +684,9 @@
                     <datalist id="cidadeDataList"></datalist>
                 </div>
                 <div class="form-group">
-                    <label>Filial</label>
-                    <select id="timeSelect">
-                        <option value="">Sem Filial</option>
+                    <label>Filial *</label>
+                    <select id="timeSelect" required>
+                        <option value="">Selecione uma filial</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -1347,12 +1347,12 @@
                     const opt = document.createElement('option');
                     opt.value = uf.sigla;
                     opt.innerText = uf.sigla + ' - ' + uf.nome; 
-                    if (uf.sigla === 'SC') opt.selected = true; // Pre-select Santa Catarina
+                    if (uf.sigla === 'MT') opt.selected = true; // Pre-select Mato Grosso
                     estadoSelect.appendChild(opt);
                 });
                 
-                // Load SC cities by default if pre-selected
-                if(estadoSelect.value === 'SC') loadCidades('SC');
+                // Load MT cities by default if pre-selected
+                if(estadoSelect.value === 'MT') loadCidades('MT');
 
             } catch (e) {
                 console.error("Erro ao carregar UFs:", e);
@@ -1777,7 +1777,7 @@
                 cidade: document.getElementById('cidade').value,
                 estado: document.getElementById('estado').value,
                 vendedor: document.getElementById('vendedorSelect').value,
-                filial: document.getElementById('timeSelect').value,
+                time: document.getElementById('timeSelect').value || null,
                 data: document.getElementById('data').value || null,
                 placas: document.getElementById('placas').value,
                 inversor: inverterString, // Set legacy string
