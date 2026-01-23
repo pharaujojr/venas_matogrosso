@@ -21,15 +21,15 @@ BEGIN
 
     -- 2. Atualizar TODAS as vendas para terem o produto "Não Especificado"
     -- O valor de venda do produto será o valor_debito da venda
-    -- O valor de custo já está na coluna valor_custo (que será 0 por padrão)
+    -- O valor de custo será 0
     UPDATE financeiro_clientes
     SET produto = jsonb_build_array(
         jsonb_build_object(
             'produtoId', produto_id,
             'quantidade', 1,
             'nomeProduto', 'Não Especificado',
-            'valorVenda', COALESCE(valor_debito, 0),
-            'valorCusto', 0
+            'valorUnitarioVenda', COALESCE(valor_debito, 0),
+            'valorUnitarioCusto', 0
         )
     );
 
