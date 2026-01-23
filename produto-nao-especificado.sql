@@ -1,39 +1,46 @@
--- Script para criar produto "Não Especificado" e atualizar vendas existentes
+-- Script para atualizar vendas existentes com produto "Não Especificado"
 -- Execute este script no banco de dados dbsolturi
+-- Assume que o produto "Não Especificado" já foi criado
 
 DO $$
 DECLARE
     produto_id INTEGER;
+    vendas_atualizadas INTEGER;
 BEGIN
-    -- 1. Inserir produto "Não Especificado" no grupo "Não Especificado" e capturar o ID
-    INSERT INTO matogrosso_produtos (descricao, grupo, unidade, created_at)
-    VALUES ('Não Especificado', 'Não Especificado', 'UN', NOW())
-    ON CONFLICT (descricao) DO UPDATE SET descricao = EXCLUDED.descricao
-    RETURNING id INTO produto_id;
+    -- 1. Buscar o ID do produto "Não Especificado"
+    SELECT id INTO produto_id 
+    FROM matogrosso_produtos 
+    WHERE descricao = 'Não Especificado' 
+    LIMIT 1;
     
-    -- Se o produto já existia, buscar o ID
     IF produto_id IS NULL THEN
-        SELECT id INTO produto_id FROM matogrosso_produtos WHERE descricao = 'Não Especificado';
+        RAISE EXCEPTION 'Produto "Não Especificado" não encontrado! Execute primeiro: INSERT INTO matogrosso_produtos (descricao, grupo, unidade, created_at) VALUES (''Não Especificado'', ''Não Especificado'', ''UN'', NOW());';
     END IF;
 
-    RAISE NOTICE 'Produto Não Especificado criado/encontrado com ID: %', produto_id;
+    RAISE NOTICE 'Produto Não Especificado encontrado com ID: %', produto_id;
 
     -- 2. Atualizar TODAS as vendas para terem o produto "Não Especificado"
+    -- O valor de venda do produto será o valor_debito da venda
+    -- O valor de custo já está na coluna valor_custo (que será 0 por padrão)
     UPDATE financeiro_clientes
     SET produto = jsonb_build_array(
         jsonb_build_object(
             'produtoId', produto_id,
             'quantidade', 1,
             'nomeProduto', 'Não Especificado',
-            'valorVenda', COALESCE(valor_debito, 0)
+            'valorVenda', COALESCE(valor_debito, 0),
+            'valorCusto', 0
         )
     );
 
-    RAISE NOTICE 'Vendas atualizadas com sucesso!';
+    GET DIAGNOSTICS vendas_atualizadas = ROW_COUNT;
+    
+    RAISE NOTICE 'Total de % vendas atualizadas com sucesso!', vendas_atualizadas;
 END $$;
 
 -- 3. Verificar as atualizações
-SELECT id, nome, valor_debito, produto 
+SELECT id, nome, valor_debito, valor_custo, produto 
 FROM financeiro_clientes 
 WHERE produto::text LIKE '%Não Especificado%'
+ORDER BY id DESC
 LIMIT 10;
