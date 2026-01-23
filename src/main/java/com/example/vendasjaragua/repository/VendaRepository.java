@@ -40,7 +40,8 @@ public interface VendaRepository extends JpaRepository<Venda, Long>, VendaReposi
     @Query("DELETE FROM Venda v WHERE v.cliente IS NULL AND v.vendedor IS NULL AND v.data IS NULL AND v.valorVenda IS NULL")
     void deleteEmptyRows();
 
-    Page<Venda> findByDataBetween(LocalDate startDate, LocalDate endDate, Pageable pageable);
+    @Query("SELECT v FROM Venda v WHERE v.ganho = true AND v.data BETWEEN :startDate AND :endDate")
+    Page<Venda> findByDataBetween(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate, Pageable pageable);
 
     @Query("SELECT v FROM Venda v WHERE " +
            "v.ganho = true AND " +
@@ -57,4 +58,7 @@ public interface VendaRepository extends JpaRepository<Venda, Long>, VendaReposi
                              @Param("endDate") LocalDate endDate, 
                              @Param("search") String search, 
                              Pageable pageable);
+
+    @Query("SELECT v FROM Venda v WHERE v.ganho = true")
+    Page<Venda> findAllGanhoTrue(Pageable pageable);
 }

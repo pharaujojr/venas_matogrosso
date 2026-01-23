@@ -359,7 +359,7 @@ public class VendaController {
             } else if (startDate != null && endDate != null) {
                 vendas = vendaRepository.findByDataBetween(startDate, endDate, pageable);
             } else {
-                vendas = vendaRepository.findAll(pageable);
+                vendas = vendaRepository.findAllGanhoTrue(pageable);
             }
 
             if (vendas.isEmpty()) {
