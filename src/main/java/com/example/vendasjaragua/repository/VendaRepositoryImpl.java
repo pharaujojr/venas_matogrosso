@@ -33,6 +33,7 @@ public class VendaRepositoryImpl implements VendaRepositoryCustom {
         sql.append("CROSS JOIN jsonb_array_elements(COALESCE(v.produto, CAST('[]' AS jsonb))) AS item ");
         sql.append("LEFT JOIN matogrosso_produtos p ON item->>'nomeProduto' = p.descricao ");
         sql.append("WHERE v.data BETWEEN :dataInicio AND :dataFim ");
+        sql.append("AND v.ganho = true ");
         
         if (times != null && !times.isEmpty()) {
             sql.append("AND v.filial IN (:times) ");
