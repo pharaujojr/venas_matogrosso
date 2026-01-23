@@ -20,8 +20,7 @@ BEGIN
     RAISE NOTICE 'Produto Não Especificado encontrado com ID: %', produto_id;
 
     -- 2. Atualizar TODAS as vendas para terem o produto "Não Especificado"
-    -- O valor de venda do produto será o valor_debito da venda
-    -- O valor de custo será 0
+    -- Limpa qualquer produto existente e cria novo com campos corretos
     UPDATE financeiro_clientes
     SET produto = jsonb_build_array(
         jsonb_build_object(
@@ -31,7 +30,8 @@ BEGIN
             'valorUnitarioVenda', COALESCE(valor_debito, 0),
             'valorUnitarioCusto', 0
         )
-    );
+    )
+    WHERE TRUE;  -- Atualiza todas as vendas sem exceção
 
     GET DIAGNOSTICS vendas_atualizadas = ROW_COUNT;
     
@@ -39,8 +39,8 @@ BEGIN
 END $$;
 
 -- 3. Verificar as atualizações
-SELECT id, nome, valor_debito, valor_custo, produto 
+SELECT id, nome, valor_debito, 
+       jsonb_pretty(produto) as produto_formatado
 FROM financeiro_clientes 
-WHERE produto::text LIKE '%Não Especificado%'
 ORDER BY id DESC
-LIMIT 10;
+LIMIT 5;
