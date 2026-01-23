@@ -859,9 +859,9 @@
                 <input type="text" id="vendedorNameInput">
             </div>
             <div class="form-group">
-                <label>Filial</label>
-                <select id="vendedorTimeSelectInput">
-                    <option value="">Sem Filial</option>
+                <label>Filial *</label>
+                <select id="vendedorTimeSelectInput" required>
+                    <option value="">Selecione uma filial</option>
                 </select>
             </div>
             <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
@@ -1396,8 +1396,8 @@
                 const fList = document.getElementById('filiaisList');
 
                 vDataList.innerHTML = '';
-                filialSel.innerHTML = '<option value="">Sem Filial</option>';
-                vFilialSel.innerHTML = '<option value="">Sem Filial</option>';
+                filialSel.innerHTML = '<option value="">Selecione uma filial</option>';
+                vFilialSel.innerHTML = '<option value="">Selecione uma filial</option>';
                 vList.innerHTML = '';
                 fList.innerHTML = '';
 
@@ -2286,8 +2286,7 @@
             // Init Global Multi-Select (Top Filters) - Use unique vendors from sales
             const msFiliaisGlobalBody = document.getElementById('msFiliaisGlobalBody');
             if (msFiliaisGlobalBody && msFiliaisGlobalBody.querySelectorAll('label').length === 0) {
-                 const filiaisWithSemFilial = [..._CACHE_FILIAIS.map(f => f.nome), 'Sem Filial'];
-                 setupMultiSelect('msFiliaisGlobalBody', filiaisWithSemFilial, onFiliaisFilterChange);
+                 setupMultiSelect('msFiliaisGlobalBody', _CACHE_FILIAIS.map(f => f.nome), onFiliaisFilterChange);
                  setupMultiSelect('msVensGlobalBody', _CACHE_VENDEDORES_UNICOS, onVendorsFilterChange);
             }
             
@@ -2613,17 +2612,12 @@
                 // Default: Show All unique vendors from sales
                 filteredVendors = _CACHE_VENDEDORES_UNICOS;
             } else {
-                // If "Sem Filial" is selected, show ALL vendors (backend will filter by filial IS NULL)
-                if (selectedFiliais.includes('Sem Filial')) {
-                    filteredVendors = _CACHE_VENDEDORES_UNICOS;
-                } else {
-                    // Show only vendors belonging to these filiais (from registered vendors)
-                    const sellers = _CACHE_VENDEDORES.filter(v => {
-                        const fName = v.filial ? v.filial.nome : null;
-                        return fName && selectedFiliais.includes(fName); 
-                    });
-                    filteredVendors = sellers.map(v => v.nome);
-                }
+                // Show only vendors belonging to selected filiais
+                const sellers = _CACHE_VENDEDORES.filter(v => {
+                    const fName = v.filial ? v.filial.nome : null;
+                    return fName && selectedFiliais.includes(fName); 
+                });
+                filteredVendors = sellers.map(v => v.nome);
             }
 
             // Re-populate Vendors Dropdown
