@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <script>
+        // Verificar autenticação e redirecionar
+        const SESSION_KEY = 'vmt_auth_token';
+        const EXPIRY_KEY = 'vmt_auth_expiry';
+        
+        const token = localStorage.getItem(SESSION_KEY);
+        const expiry = localStorage.getItem(EXPIRY_KEY);
+        
+        // Se não tiver token ou expirou, redirecionar para login
+        if (!token || !expiry || new Date().getTime() > parseInt(expiry)) {
+            localStorage.removeItem(SESSION_KEY);
+            localStorage.removeItem(EXPIRY_KEY);
+            window.location.replace('login.html');
+        } else {
+            window.location.replace('index.html');
+        }
+    </script>
+</head>
+<body>
+    <p>Redirecionando...</p>
+</body>
+</html>

@@ -4,7 +4,7 @@ services:
     build: .
     container_name: vendas-jaragua
     ports:
-      - "8686:8686"
+      - "8787:8787"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://192.168.0.162:8449/dbsolturi
       - SPRING_DATASOURCE_USERNAME=solturi
