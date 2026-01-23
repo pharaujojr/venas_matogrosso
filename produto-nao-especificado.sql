@@ -1,48 +1,38 @@
 -- Script para criar produto "Não Especificado" e atualizar vendas existentes
 -- Execute este script no banco de dados dbsolturi
 
--- 1. Inserir produto "Não Especificado" no grupo "Não Especificado"
-INSERT INTO matogrosso_produtos (descricao, grupo, unidade, created_at)
-VALUES ('Não Especificado', 'Não Especificado', 'UN', NOW())
-ON CONFLICT DO NOTHING;
+DO $$
+DECLARE
+    produto_id INTEGER;
+BEGIN
+    -- 1. Inserir produto "Não Especificado" no grupo "Não Especificado" e capturar o ID
+    INSERT INTO matogrosso_produtos (descricao, grupo, unidade, created_at)
+    VALUES ('Não Especificado', 'Não Especificado', 'UN', NOW())
+    ON CONFLICT (descricao) DO UPDATE SET descricao = EXCLUDED.descricao
+    RETURNING id INTO produto_id;
+    
+    -- Se o produto já existia, buscar o ID
+    IF produto_id IS NULL THEN
+        SELECT id INTO produto_id FROM matogrosso_produtos WHERE descricao = 'Não Especificado';
+    END IF;
 
--- 2. Verificar o ID do produto criado (anotar este ID)
-SELECT id, descricao, grupo FROM matogrosso_produtos WHERE descricao = 'Não Especificado';
+    RAISE NOTICE 'Produto Não Especificado criado/encontrado com ID: %', produto_id;
 
--- 3. Atualizar vendas existentes que têm produto JSON para incluir o produto "Não Especificado"
--- IMPORTANTE: Substitua {PRODUTO_ID} pelo ID retornado no passo 2
--- 
--- Exemplo de estrutura do JSON produto esperada:
--- [{"produtoId": {PRODUTO_ID}, "quantidade": 1, "nomeProduto": "Não Especificado", "valorVenda": VALOR_TOTAL}]
---
--- Como o produto JSON em financeiro_clientes é complexo e varia,
--- este script apenas mostra o conceito. Você precisará ajustar baseado nos dados reais.
---
--- Opção 1: Atualizar vendas sem produto especificado (produto = null ou [])
-UPDATE financeiro_clientes
-SET produto = jsonb_build_array(
-    jsonb_build_object(
-        'produtoId', {PRODUTO_ID},  -- SUBSTITUA pelo ID real
-        'quantidade', 1,
-        'nomeProduto', 'Não Especificado',
-        'valorVenda', COALESCE(valor_debito, 0)
-    )
-)
-WHERE produto IS NULL OR produto = '[]'::jsonb OR jsonb_array_length(produto) = 0;
+    -- 2. Atualizar TODAS as vendas para terem o produto "Não Especificado"
+    UPDATE financeiro_clientes
+    SET produto = jsonb_build_array(
+        jsonb_build_object(
+            'produtoId', produto_id,
+            'quantidade', 1,
+            'nomeProduto', 'Não Especificado',
+            'valorVenda', COALESCE(valor_debito, 0)
+        )
+    );
 
--- Opção 2: Se todas as vendas devem ter o produto "Não Especificado"
--- (descomente se necessário)
--- UPDATE financeiro_clientes
--- SET produto = jsonb_build_array(
---     jsonb_build_object(
---         'produtoId', {PRODUTO_ID},  -- SUBSTITUA pelo ID real
---         'quantidade', 1,
---         'nomeProduto', 'Não Especificado',
---         'valorVenda', COALESCE(valor_debito, 0)
---     )
--- );
+    RAISE NOTICE 'Vendas atualizadas com sucesso!';
+END $$;
 
--- 4. Verificar as atualizações
+-- 3. Verificar as atualizações
 SELECT id, nome, valor_debito, produto 
 FROM financeiro_clientes 
 WHERE produto::text LIKE '%Não Especificado%'
