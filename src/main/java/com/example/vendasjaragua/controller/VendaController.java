@@ -71,11 +71,14 @@ public class VendaController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Venda> updateVenda(@PathVariable Long id, @RequestBody Venda venda) {
-        if (!vendaRepository.existsById(id)) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-        venda.setId(id);
         try {
+            Venda vendaExistente = vendaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Venda não encontrada"));
+            
+            // Preservar data_cadastro original
+            venda.setId(id);
+            venda.setDataCadastro(vendaExistente.getDataCadastro());
+            
             Venda updatedVenda = vendaRepository.save(venda);
             return new ResponseEntity<>(updatedVenda, HttpStatus.OK);
         } catch (Exception e) {
