@@ -1713,7 +1713,7 @@
 
         async function toggleGanho(vendaId, index) {
             try {
-                const response = await fetch(`${BASE_URL}/api/vendas/${vendaId}/ganho`, {
+                const response = await fetch(`/api/vendas/${vendaId}/ganho`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' }
                 });
