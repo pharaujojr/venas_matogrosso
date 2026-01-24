@@ -1190,7 +1190,7 @@
             const vendSel = document.getElementById('vendedorSelect');
             vendSel.value = venda.vendedor || '';
             
-            document.getElementById('timeSelect').value = venda.filial || '';
+            document.getElementById('timeSelect').value = venda.time || '';
 
             document.getElementById('data').value = venda.data || '';
             document.getElementById('placas').value = venda.placas || '';
@@ -1240,7 +1240,7 @@
         function enableEdit() {
             document.getElementById('modalVendaTitle').innerText = 'Editar Venda';
             
-            const fields = ['cliente', 'telefone', 'cidade', 'estado', 'vendedorSelect', 'data', 'placas', 'potencia', 'nf', 'ov'];
+            const fields = ['cliente', 'telefone', 'cidade', 'estado', 'vendedorSelect', 'timeSelect', 'data', 'placas', 'potencia', 'nf', 'ov'];
             fields.forEach(f => document.getElementById(f).disabled = false);
 
             document.getElementById('itemGrupoSelect').disabled = false;
