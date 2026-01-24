@@ -484,6 +484,7 @@
                             <th>Lucro Bruto</th>
                             <th>Markup</th>
                             <th>Filial</th>
+                            <th style="width: 60px;">Ganho</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1637,7 +1638,7 @@
             try {
                 const response = await fetch(url);
                 if (response.status === 204) {
-                    tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;">Nenhum registro encontrado.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;">Nenhum registro encontrado.</td></tr>';
                     updatePagination(0, 0);
                     return;
                 }
@@ -1653,11 +1654,11 @@
                     updatePagination(currentPage, totalPages);
                     renderTable(vendas);
                 } else {
-                    tbody.innerHTML = `<tr><td colspan="13" style="text-align:center; color: red;">Erro ao carregar: ${response.status}</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="14" style="text-align:center; color: red;">Erro ao carregar: ${response.status}</td></tr>`;
                 }
             } catch (error) {
                 console.error("Erro", error);
-                tbody.innerHTML = `<tr><td colspan="13" style="text-align:center; color: red;">Erro de conexão.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="14" style="text-align:center; color: red;">Erro de conexão.</td></tr>`;
             }
         }
 
@@ -1667,8 +1668,8 @@
             
             vendas.forEach((v, index) => {
                 const tr = document.createElement('tr');
-                tr.style.cursor = 'pointer';
-                tr.onclick = () => openVendaDetails(index);
+                
+                // Create all cells except ganho
                 tr.innerHTML = `
                     <td class="col-wide" title="${v.cliente || ''}">${v.cliente || ''}</td>
                     <td>${v.telefone || ''}</td>
@@ -1684,8 +1685,52 @@
                     <td>${formatMarkup(v.markup)}</td>
                     <td>${v.time || ''}</td>
                 `;
+                
+                // Add ganho toggle cell
+                const ganhoCell = document.createElement('td');
+                ganhoCell.style.textAlign = 'center';
+                ganhoCell.style.cursor = 'pointer';
+                ganhoCell.innerHTML = v.ganho ? 
+                    '<span style="color: #28a745; font-size: 18px;">✓</span>' : 
+                    '<span style="color: #dc3545; font-size: 18px;">✗</span>';
+                ganhoCell.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleGanho(v.id, index);
+                };
+                tr.appendChild(ganhoCell);
+                
+                // Make row clickable for details (except ganho cell)
+                tr.style.cursor = 'pointer';
+                tr.onclick = (e) => {
+                    if (e.target !== ganhoCell && !ganhoCell.contains(e.target)) {
+                        openVendaDetails(index);
+                    }
+                };
+                
                 tbody.appendChild(tr);
             });
+        }
+
+        async function toggleGanho(vendaId, index) {
+            try {
+                const response = await fetch(`${BASE_URL}/api/vendas/${vendaId}/ganho`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (response.ok) {
+                    const updatedVenda = await response.json();
+                    _CACHE_CURRENT_PAGE_VENDAS[index] = updatedVenda;
+                    renderTable(_CACHE_CURRENT_PAGE_VENDAS);
+                    // Reload dashboards to reflect changes
+                    loadDashboards();
+                } else {
+                    alert('Erro ao atualizar status de ganho');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao atualizar status de ganho');
+            }
         }
 
         let debounceTimer;

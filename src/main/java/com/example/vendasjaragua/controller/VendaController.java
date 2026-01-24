@@ -84,6 +84,20 @@ public class VendaController {
         }
     }
 
+    @PatchMapping("/{id}/ganho")
+    public ResponseEntity<Venda> toggleGanho(@PathVariable Long id) {
+        try {
+            Venda venda = vendaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Venda não encontrada"));
+            venda.setGanho(venda.getGanho() == null ? false : !venda.getGanho());
+            Venda updatedVenda = vendaRepository.save(venda);
+            return new ResponseEntity<>(updatedVenda, HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @GetMapping("/times")
     public ResponseEntity<List<Time>> getAllTimes() {
         return new ResponseEntity<>(timeRepository.findAll(), HttpStatus.OK);
@@ -359,7 +373,7 @@ public class VendaController {
             } else if (startDate != null && endDate != null) {
                 vendas = vendaRepository.findByDataBetween(startDate, endDate, pageable);
             } else {
-                vendas = vendaRepository.findAllGanhoTrue(pageable);
+                vendas = vendaRepository.findAllVendas(pageable);
             }
 
             if (vendas.isEmpty()) {
