@@ -725,6 +725,28 @@
                 <div class="form-group"><label>OV</label><input type="text" id="ov"></div>
             </div>
 
+            <!-- Forma de Pagamento e Observação -->
+            <div style="margin-top: 15px; display: grid; grid-template-columns: 1fr 2fr; gap: 15px;">
+                <div class="form-group" style="margin: 0;">
+                    <label>Forma de Pagamento</label>
+                    <select id="formaPagamento">
+                        <option value="">Selecione...</option>
+                        <option value="PIX">PIX</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="Depósito em Conta">Depósito em Conta</option>
+                        <option value="Crédito">Crédito</option>
+                        <option value="Débito">Débito</option>
+                        <option value="Boleto">Boleto</option>
+                        <option value="Cheque">Cheque</option>
+                        <option value="Permuta">Permuta</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label>Observação</label>
+                    <textarea id="observacao" rows="3" style="resize: vertical; font-family: inherit; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 4px; color: #fff; width: 100%; box-sizing: border-box;"></textarea>
+                </div>
+            </div>
+
             <!-- INVERTERS SECTION -->
             <div style="margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 15px;">
                 <h4 style="margin: 0 0 10px 0;">Inversores</h4>
@@ -1130,7 +1152,7 @@
 
             // Reset fields
             // Removed 'inversor' from fields logic, handled via List now.
-            const fields = ['cliente', 'telefone', 'cidade', 'estado', 'vendedorSelect', 'timeSelect', 'data', 'placas', 'potencia', 'valorVenda', 'valorMaterial', 'nf', 'ov'];
+            const fields = ['cliente', 'telefone', 'cidade', 'estado', 'vendedorSelect', 'timeSelect', 'data', 'placas', 'potencia', 'valorVenda', 'valorMaterial', 'nf', 'ov', 'formaPagamento', 'observacao'];
             fields.forEach(f => {
                 const el = document.getElementById(f);
                 if(el) {
@@ -1200,6 +1222,8 @@
             document.getElementById('valorMaterial').value = venda.valorMaterial || '';
             document.getElementById('nf').value = venda.nf || '';
             document.getElementById('ov').value = venda.ov || '';
+            document.getElementById('formaPagamento').value = venda.formaPagamento || '';
+            document.getElementById('observacao').value = venda.observacao || '';
 
             // Populate Cart
             currentCart = venda.produto ? JSON.parse(JSON.stringify(venda.produto)) : [];
@@ -1210,7 +1234,7 @@
             updateInverterTable();
 
             // Disable Everything
-            const fields = ['cliente', 'telefone', 'cidade', 'estado', 'vendedorSelect', 'timeSelect', 'data', 'placas', 'potencia', 'nf', 'ov']; // Valors are readonly anyway
+            const fields = ['cliente', 'telefone', 'cidade', 'estado', 'vendedorSelect', 'timeSelect', 'data', 'placas', 'potencia', 'nf', 'ov', 'formaPagamento', 'observacao']; // Valors are readonly anyway
             fields.forEach(f => document.getElementById(f).disabled = true);
 
             // Disable Cart Inputs
@@ -1240,7 +1264,7 @@
         function enableEdit() {
             document.getElementById('modalVendaTitle').innerText = 'Editar Venda';
             
-            const fields = ['cliente', 'telefone', 'cidade', 'estado', 'vendedorSelect', 'timeSelect', 'data', 'placas', 'potencia', 'nf', 'ov'];
+            const fields = ['cliente', 'telefone', 'cidade', 'estado', 'vendedorSelect', 'timeSelect', 'data', 'placas', 'potencia', 'nf', 'ov', 'formaPagamento', 'observacao'];
             fields.forEach(f => document.getElementById(f).disabled = false);
 
             document.getElementById('itemGrupoSelect').disabled = false;
@@ -1860,7 +1884,9 @@
                 valorMaterial: document.getElementById('valorMaterial').value || null,
                 produto: currentCart, // calculated items
                 nf: document.getElementById('nf').value,
-                ov: document.getElementById('ov').value
+                ov: document.getElementById('ov').value,
+                formaPagamento: document.getElementById('formaPagamento').value || null,
+                observacao: document.getElementById('observacao').value || null
             };
 
             const method = id ? 'PUT' : 'POST';
