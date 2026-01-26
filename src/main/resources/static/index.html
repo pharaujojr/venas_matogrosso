@@ -1196,8 +1196,17 @@
             const venda = _CACHE_CURRENT_PAGE_VENDAS[index];
             if (!venda) return;
             
-            openModal(); // Reset first
+            // Don't call openModal() - it resets the cart! Manually set everything instead
             document.getElementById('modalVendaTitle').innerText = 'Detalhes da Venda';
+            document.getElementById('saveStatus').innerText = '';
+            editingCartIndex = -1;
+            if(document.getElementById('btnAddCartItem')) document.getElementById('btnAddCartItem').innerText = 'Adicionar';
+            
+            // Populate Cart FIRST before opening modal
+            currentCart = venda.produto ? JSON.parse(JSON.stringify(venda.produto)) : [];
+            
+            // Populate Inverters FIRST
+            currentInverters = venda.inverterInfo ? JSON.parse(JSON.stringify(venda.inverterInfo)) : [];
             
             // Populate
             document.getElementById('vendaId').value = venda.id;
@@ -1226,12 +1235,8 @@
             document.getElementById('formaPagamento').value = venda.formaPagamento || '';
             document.getElementById('observacao').value = venda.observacao || '';
 
-            // Populate Cart
-            currentCart = venda.produto ? JSON.parse(JSON.stringify(venda.produto)) : [];
+            // Update tables with the already-loaded data
             updateCartTable();
-
-            // Populate Inverters
-            currentInverters = venda.inverterInfo ? JSON.parse(JSON.stringify(venda.inverterInfo)) : [];
             updateInverterTable();
 
             // Disable Everything
@@ -1260,6 +1265,9 @@
             document.getElementById('btnSalvarVenda').style.display = 'none';
             document.getElementById('btnEditVenda').style.display = 'block';
             document.getElementById('btnExcluirVenda').style.display = 'block';
+            
+            // Open modal LAST
+            document.getElementById('vendaModal').classList.add('modal-active');
         }
 
         function enableEdit() {
