@@ -2359,6 +2359,7 @@
         let chartVendedoresInstance = null;
         let chartTimesPieInstance = null;
         let chartProdutosInstance = null;
+        let _VENDEDORES_PREVIOUS_DATA = []; // Store previous period data for comparison
         
         let _VENDEDORES_CHART_TYPE = 'bar'; // 'bar' or 'pie'
         
@@ -2366,6 +2367,32 @@
         let _CACHE_PRODUTOS_NAMES = [];
         let _CACHE_PRODUTOS_FULL = []; // Store full product objects with grupo relationship
         let _CACHE_VENDEDORES_UNICOS = []; // All unique vendor names from sales
+
+        // Calculate equivalent previous period based on date range
+        function calculatePreviousPeriod(startDate, endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            const prevEnd = new Date(start);
+            prevEnd.setDate(prevEnd.getDate() - 1);
+            
+            const prevStart = new Date(prevEnd);
+            prevStart.setDate(prevStart.getDate() - diffDays);
+            
+            const formatDate = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+            
+            return {
+                inicio: formatDate(prevStart),
+                fim: formatDate(prevEnd)
+            };
+        }
 
         async function initDashboardFilters() {
             // Ensure Times and Vendedores are loaded
@@ -2518,6 +2545,44 @@
             if (params.length > 0) queryString = '?' + params.join('&');
 
              try {
+                // Calculate previous period for comparison
+                let vendedoresPrevious = [];
+                if (inicio && fim) {
+                    const prevPeriod = calculatePreviousPeriod(inicio, fim);
+                    let queryStringPrev = `inicio=${prevPeriod.inicio}&fim=${prevPeriod.fim}`;
+                    
+                    // Add same filters as current period
+                    const selectedFiliais = getCheckedValues('msFiliaisGlobalBody');
+                    if (selectedFiliais.length > 0) {
+                        selectedFiliais.forEach(f => {
+                            queryStringPrev += `&filiais=${encodeURIComponent(f)}`;
+                        });
+                    }
+                    
+                    const selectedVens = getCheckedValues('msVensGlobalBody');
+                    if (selectedVens.length > 0) {
+                        selectedVens.forEach(v => {
+                            queryStringPrev += `&vendedores=${encodeURIComponent(v)}`;
+                        });
+                    }
+                    
+                    const selectedGroups = getCheckedValues('msGruposBody');
+                    if (selectedGroups.length > 0) {
+                        selectedGroups.forEach(g => {
+                            queryStringPrev += `&grupos=${encodeURIComponent(g)}`;
+                        });
+                    }
+                    
+                    const selectedProds = getCheckedValues('msProdsBody');
+                    if (selectedProds.length > 0) {
+                        selectedProds.forEach(p => {
+                            queryStringPrev += `&produtos=${encodeURIComponent(p)}`;
+                        });
+                    }
+                    
+                    vendedoresPrevious = await fetch(`/api/vendas/dashboard/vendedores?${queryStringPrev}`).then(r => r.json());
+                }
+                
                 const [mensal, vendedores, produtos, stats] = await Promise.all([
                     fetch(`/api/vendas/dashboard/mensal?${queryStringMensal}`).then(r => r.json()),
                     fetch(`/api/vendas/dashboard/vendedores${queryString}`).then(r => r.json()),
@@ -2525,6 +2590,7 @@
                     fetch(`/api/vendas/dashboard/stats${queryString}`).then(r => r.json())
                 ]);
 
+                _VENDEDORES_PREVIOUS_DATA = vendedoresPrevious;
                 renderChartMensal(mensal);
                 renderChartVendedores(vendedores);
                 renderChartProdutos(produtos);
@@ -2863,6 +2929,13 @@
             if (chartVendedoresInstance) chartVendedoresInstance.destroy();
 
             if (_VENDEDORES_CHART_TYPE === 'bar') {
+                // Calculate percentage changes
+                const percentChanges = pageData.map(current => {
+                    const prevData = _VENDEDORES_PREVIOUS_DATA.find(p => p.vendedor === current.vendedor);
+                    if (!prevData || prevData.total === 0) return null;
+                    return ((current.total - prevData.total) / prevData.total) * 100;
+                });
+                
                 chartVendedoresInstance = new Chart(ctx, {
                     type: 'bar',
                     data: {
@@ -2879,13 +2952,26 @@
                         indexAxis: 'y',
                         responsive: true,
                         maintainAspectRatio: false,
+                        layout: {
+                            padding: {
+                                right: 80 // Space for percentage indicators
+                            }
+                        },
                         plugins: {
                              legend: { display: false },
                              tooltip: { 
                                  callbacks: { 
-                                     label: function(ctx) { return 'R$ ' + ctx.parsed.x.toLocaleString('pt-BR'); }
+                                     label: function(ctx) { 
+                                         let label = 'R$ ' + ctx.parsed.x.toLocaleString('pt-BR');
+                                         const pctChange = percentChanges[ctx.dataIndex];
+                                         if (pctChange !== null) {
+                                             label += ' (' + (pctChange > 0 ? '+' : '') + pctChange.toFixed(1) + '% vs período anterior)';
+                                         }
+                                         return label;
+                                     }
                                  }
-                             }
+                             },
+                             datalabels: false // Disable default datalabels if exists
                         },
                         scales: {
                             x: { 
@@ -2897,7 +2983,48 @@
                                 grid: { display: false }
                             }
                         }
-                    }
+                    },
+                    plugins: [{
+                        id: 'customLabels',
+                        afterDatasetsDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            chart.data.datasets.forEach((dataset, datasetIndex) => {
+                                const meta = chart.getDatasetMeta(datasetIndex);
+                                meta.data.forEach((bar, index) => {
+                                    const value = dataset.data[index];
+                                    const formattedValue = 'R$ ' + value.toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+                                    
+                                    // Draw value inside bar (white, right-aligned)
+                                    ctx.save();
+                                    ctx.font = 'bold 12px Segoe UI';
+                                    ctx.fillStyle = 'white';
+                                    ctx.textAlign = 'right';
+                                    ctx.textBaseline = 'middle';
+                                    const xPos = bar.x - 10;
+                                    const yPos = bar.y;
+                                    ctx.fillText(formattedValue, xPos, yPos);
+                                    ctx.restore();
+                                    
+                                    // Draw percentage indicator outside bar
+                                    const pctChange = percentChanges[index];
+                                    if (pctChange !== null) {
+                                        ctx.save();
+                                        const color = pctChange >= 0 ? '#00ff00' : '#ff0000';
+                                        const arrow = pctChange >= 0 ? '▲' : '▼';
+                                        const pctText = arrow + ' ' + Math.abs(pctChange).toFixed(1) + '%';
+                                        
+                                        ctx.font = 'bold 11px Segoe UI';
+                                        ctx.fillStyle = color;
+                                        ctx.textAlign = 'left';
+                                        ctx.textBaseline = 'middle';
+                                        const xPosIndicator = bar.x + 15;
+                                        ctx.fillText(pctText, xPosIndicator, yPos);
+                                        ctx.restore();
+                                    }
+                                });
+                            });
+                        }
+                    }]
                 });
             } else {
                 // Pie chart
