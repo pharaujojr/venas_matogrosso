@@ -2996,7 +2996,7 @@
                                     
                                     // Draw value inside bar (white, right-aligned)
                                     ctx.save();
-                                    ctx.font = 'bold 12px Segoe UI';
+                                    ctx.font = '600 12px "Segoe UI", sans-serif';
                                     ctx.fillStyle = 'white';
                                     ctx.textAlign = 'right';
                                     ctx.textBaseline = 'middle';
@@ -3013,7 +3013,7 @@
                                         const arrow = pctChange >= 0 ? '▲' : '▼';
                                         const pctText = arrow + ' ' + Math.abs(pctChange).toFixed(1) + '%';
                                         
-                                        ctx.font = 'bold 11px Segoe UI';
+                                        ctx.font = '600 11px "Segoe UI", sans-serif';
                                         ctx.fillStyle = color;
                                         ctx.textAlign = 'left';
                                         ctx.textBaseline = 'middle';
