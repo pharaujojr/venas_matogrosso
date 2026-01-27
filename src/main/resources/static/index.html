@@ -2994,15 +2994,31 @@
                                     const value = dataset.data[index];
                                     const formattedValue = 'R$ ' + value.toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 0});
                                     
-                                    // Draw value inside bar (white, right-aligned)
+                                    // Measure text width to determine if bar is large enough
                                     ctx.save();
                                     ctx.font = '600 12px "Segoe UI", sans-serif';
-                                    ctx.fillStyle = 'white';
-                                    ctx.textAlign = 'right';
-                                    ctx.textBaseline = 'middle';
-                                    const xPos = bar.x - 10;
-                                    const yPos = bar.y;
-                                    ctx.fillText(formattedValue, xPos, yPos);
+                                    const textWidth = ctx.measureText(formattedValue).width;
+                                    const barWidth = bar.x - bar.base;
+                                    const minBarWidth = textWidth + 20; // Add padding
+                                    
+                                    // Draw value inside or outside bar based on size
+                                    if (barWidth >= minBarWidth) {
+                                        // Bar is large enough - draw inside (white, right-aligned)
+                                        ctx.fillStyle = 'white';
+                                        ctx.textAlign = 'right';
+                                        ctx.textBaseline = 'middle';
+                                        const xPos = bar.x - 10;
+                                        const yPos = bar.y;
+                                        ctx.fillText(formattedValue, xPos, yPos);
+                                    } else {
+                                        // Bar is too small - draw outside (same color as text, left-aligned after bar)
+                                        ctx.fillStyle = '#e0e1dd';
+                                        ctx.textAlign = 'left';
+                                        ctx.textBaseline = 'middle';
+                                        const xPos = bar.x + 5;
+                                        const yPos = bar.y;
+                                        ctx.fillText(formattedValue, xPos, yPos);
+                                    }
                                     ctx.restore();
                                     
                                     // Draw percentage indicator outside bar
@@ -3014,11 +3030,22 @@
                                         const pctText = arrow + ' ' + Math.abs(pctChange).toFixed(1) + '%';
                                         
                                         ctx.font = '600 11px "Segoe UI", sans-serif';
+                                        const pctTextWidth = ctx.measureText(pctText).width;
+                                        
+                                        // Position percentage indicator, accounting for value label if outside
+                                        let xPosIndicator;
+                                        if (barWidth >= minBarWidth) {
+                                            // Value is inside bar, percentage starts right after bar
+                                            xPosIndicator = bar.x + 15;
+                                        } else {
+                                            // Value is outside bar, percentage starts after value with spacing
+                                            xPosIndicator = bar.x + textWidth + 20;
+                                        }
+                                        
                                         ctx.fillStyle = color;
                                         ctx.textAlign = 'left';
                                         ctx.textBaseline = 'middle';
-                                        const xPosIndicator = bar.x + 15;
-                                        ctx.fillText(pctText, xPosIndicator, yPos);
+                                        ctx.fillText(pctText, xPosIndicator, bar.y);
                                         ctx.restore();
                                     }
                                 });
