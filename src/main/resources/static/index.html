@@ -157,6 +157,18 @@
             color-scheme: dark;
         }
 
+        /* Error State */
+        .input-error {
+            border: 2px solid #ff6b6b !important;
+            background-color: rgba(255, 107, 107, 0.1) !important;
+        }
+        .error-message {
+            color: #ff6b6b;
+            font-size: 0.85em;
+            margin-top: 3px;
+            display: block;
+        }
+
         /* Table Styling */
         .table-container {
             border-radius: 8px;
@@ -446,6 +458,18 @@
                 <span style="color: var(--accent)">até</span>
                 <input type="date" id="filterEndDate" onchange="resetAndLoad()" title="Data Final">
                 
+                <label style="color: var(--accent); font-size: 0.9em; margin-left: 15px;">Filial:</label>
+                <select id="filterFilial" onchange="resetAndLoad()" style="padding: 6px; min-width: 150px;">
+                    <option value="">Todas</option>
+                </select>
+                
+                <label style="color: var(--accent); font-size: 0.9em; margin-left: 15px;">Ganho:</label>
+                <select id="filterGanho" onchange="resetAndLoad()" style="padding: 6px; min-width: 100px;">
+                    <option value="">Todos</option>
+                    <option value="true">Sim</option>
+                    <option value="false">Não</option>
+                </select>
+                
                 <input type="text" id="tableFilter" oninput="debounceSearch()" placeholder="🔍 Buscar em todas as páginas..." style="margin-left: 15px; padding: 6px; width: 200px; border: 1px solid var(--border-color); border-radius: 4px; background-color: rgba(0,0,0,0.2); color: #fff;">
 
                 <div class="actions-group" style="margin-left: 15px;">
@@ -712,8 +736,9 @@
                 </div>
                 <div class="form-group">
                     <label>Vendedor</label>
-                    <input type="text" id="vendedorSelect" list="vendedorDataList" placeholder="Digite para buscar..." autocomplete="off">
+                    <input type="text" id="vendedorSelect" list="vendedorDataList" placeholder="Digite para buscar..." autocomplete="off" onblur="validateVendedor()">
                     <datalist id="vendedorDataList"></datalist>
+                    <span id="vendedorError" class="error-message" style="display: none;"></span>
                 </div>
                 <div class="form-group"><label>Data</label><input type="date" id="data"></div>
                 <div class="form-group"><label>Placas</label><input type="text" id="placas"></div>
@@ -1470,6 +1495,12 @@
                     vDataList.appendChild(opt);
                 });
 
+                // Populate filter select
+                const filterFilialSel = document.getElementById('filterFilial');
+                if (filterFilialSel) {
+                    filterFilialSel.innerHTML = '<option value="">Todas</option>';
+                }
+
                 filiais.forEach(f => {
                     // Formulário de Venda - Select de Filial
                     const optVenda = document.createElement('option');
@@ -1482,6 +1513,14 @@
                     optV.value = f.id;
                     optV.innerText = f.nome;
                     vFilialSel.appendChild(optV);
+                    
+                    // Filter Select
+                    if (filterFilialSel) {
+                        const optFilter = document.createElement('option');
+                        optFilter.value = f.nome;
+                        optFilter.innerText = f.nome;
+                        filterFilialSel.appendChild(optFilter);
+                    }
 
                     // List
                     const li = document.createElement('li');
@@ -1658,12 +1697,16 @@
             const startDate = document.getElementById('filterStartDate').value;
             const endDate = document.getElementById('filterEndDate').value;
             const search = document.getElementById('tableFilter').value;
+            const filial = document.getElementById('filterFilial').value;
+            const ganho = document.getElementById('filterGanho').value;
             
             let url = `/api/vendas?page=${currentPage}&size=${pageSize}`;
             
             if (startDate) url += `&startDate=${startDate}`;
             if (endDate) url += `&endDate=${endDate}`;
             if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (filial) url += `&filial=${encodeURIComponent(filial)}`;
+            if (ganho) url += `&ganho=${ganho}`;
 
             const tbody = document.querySelector('#vendasTable tbody');
             tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;">Carregando...</td></tr>';
@@ -1864,9 +1907,43 @@
             }
         }
 
+        function validateVendedor() {
+            const vendedorInput = document.getElementById('vendedorSelect');
+            const vendedorError = document.getElementById('vendedorError');
+            const vendedorValue = vendedorInput.value.trim();
+            
+            // Se o campo estiver vazio, não validar
+            if (!vendedorValue) {
+                vendedorInput.classList.remove('input-error');
+                vendedorError.style.display = 'none';
+                return true;
+            }
+            
+            // Verificar se o vendedor existe no cache
+            const vendedorExists = _CACHE_VENDEDORES.some(v => v.nome.toLowerCase() === vendedorValue.toLowerCase());
+            
+            if (!vendedorExists) {
+                vendedorInput.classList.add('input-error');
+                vendedorError.textContent = '⚠ Este vendedor não está cadastrado no sistema';
+                vendedorError.style.display = 'block';
+                return false;
+            } else {
+                vendedorInput.classList.remove('input-error');
+                vendedorError.style.display = 'none';
+                return true;
+            }
+        }
+
         async function salvarVenda() {
             const status = document.getElementById('saveStatus');
             const id = document.getElementById('vendaId').value;
+            
+            // Validar vendedor antes de salvar
+            if (!validateVendedor()) {
+                status.innerText = "Erro: Vendedor inválido";
+                status.style.color = "red";
+                return;
+            }
             
             // Concatenate Inverters for legacy field
             let inverterString = "";

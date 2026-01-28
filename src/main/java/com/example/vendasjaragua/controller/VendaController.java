@@ -364,7 +364,9 @@ public class VendaController {
             @RequestParam(defaultValue = "50") int size,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false) String search
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String filial,
+            @RequestParam(required = false) Boolean ganho
     ) {
         try {
             // Sort by data descending by default to show newest first
@@ -372,9 +374,17 @@ public class VendaController {
             Page<Venda> vendas;
 
             if (search != null && !search.trim().isEmpty()) {
-                vendas = vendaRepository.searchVendas(startDate, endDate, search.trim(), pageable);
+                if (filial != null && !filial.trim().isEmpty()) {
+                    vendas = vendaRepository.searchVendasWithFilialAndGanho(startDate, endDate, search.trim(), filial.trim(), ganho, pageable);
+                } else {
+                    vendas = vendaRepository.searchVendasWithGanho(startDate, endDate, search.trim(), ganho, pageable);
+                }
+            } else if (filial != null && !filial.trim().isEmpty()) {
+                vendas = vendaRepository.findByTimeAndDateRangeAndGanho(filial.trim(), startDate, endDate, ganho, pageable);
             } else if (startDate != null && endDate != null) {
-                vendas = vendaRepository.findByDataBetween(startDate, endDate, pageable);
+                vendas = vendaRepository.findByDataBetweenAndGanho(startDate, endDate, ganho, pageable);
+            } else if (ganho != null) {
+                vendas = vendaRepository.findByGanho(ganho, pageable);
             } else {
                 vendas = vendaRepository.findAllVendas(pageable);
             }

@@ -59,6 +59,92 @@ public interface VendaRepository extends JpaRepository<Venda, Long>, VendaReposi
                              @Param("search") String search, 
                              Pageable pageable);
 
+    @Query("SELECT v FROM Venda v WHERE " +
+           "v.ganho = true AND " +
+           "v.time = :filial AND " +
+           "(COALESCE(:startDate, NULL) IS NULL OR v.data >= :startDate) AND " +
+           "(COALESCE(:endDate, NULL) IS NULL OR v.data <= :endDate) AND " +
+           "(LOWER(v.cliente) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.vendedor) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.nf) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.ov) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.telefone) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.cidade) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.email) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Venda> searchVendasWithFilial(@Param("startDate") LocalDate startDate,
+                                        @Param("endDate") LocalDate endDate,
+                                        @Param("search") String search,
+                                        @Param("filial") String filial,
+                                        Pageable pageable);
+
+    @Query("SELECT v FROM Venda v WHERE " +
+           "v.time = :filial AND " +
+           "(COALESCE(:startDate, NULL) IS NULL OR v.data >= :startDate) AND " +
+           "(COALESCE(:endDate, NULL) IS NULL OR v.data <= :endDate)")
+    Page<Venda> findByTimeAndDateRange(@Param("filial") String filial,
+                                        @Param("startDate") LocalDate startDate,
+                                        @Param("endDate") LocalDate endDate,
+                                        Pageable pageable);
+
+    @Query("SELECT v FROM Venda v WHERE " +
+           "(COALESCE(:ganho, NULL) IS NULL OR v.ganho = :ganho) AND " +
+           "(COALESCE(:startDate, NULL) IS NULL OR v.data >= :startDate) AND " +
+           "(COALESCE(:endDate, NULL) IS NULL OR v.data <= :endDate) AND " +
+           "(LOWER(v.cliente) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.vendedor) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.nf) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.ov) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.telefone) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.cidade) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.email) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Venda> searchVendasWithGanho(@Param("startDate") LocalDate startDate,
+                                       @Param("endDate") LocalDate endDate,
+                                       @Param("search") String search,
+                                       @Param("ganho") Boolean ganho,
+                                       Pageable pageable);
+
+    @Query("SELECT v FROM Venda v WHERE " +
+           "v.time = :filial AND " +
+           "(COALESCE(:ganho, NULL) IS NULL OR v.ganho = :ganho) AND " +
+           "(COALESCE(:startDate, NULL) IS NULL OR v.data >= :startDate) AND " +
+           "(COALESCE(:endDate, NULL) IS NULL OR v.data <= :endDate) AND " +
+           "(LOWER(v.cliente) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.vendedor) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.nf) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.ov) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.telefone) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.cidade) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(v.email) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Venda> searchVendasWithFilialAndGanho(@Param("startDate") LocalDate startDate,
+                                                @Param("endDate") LocalDate endDate,
+                                                @Param("search") String search,
+                                                @Param("filial") String filial,
+                                                @Param("ganho") Boolean ganho,
+                                                Pageable pageable);
+
+    @Query("SELECT v FROM Venda v WHERE " +
+           "v.time = :filial AND " +
+           "(COALESCE(:ganho, NULL) IS NULL OR v.ganho = :ganho) AND " +
+           "(COALESCE(:startDate, NULL) IS NULL OR v.data >= :startDate) AND " +
+           "(COALESCE(:endDate, NULL) IS NULL OR v.data <= :endDate)")
+    Page<Venda> findByTimeAndDateRangeAndGanho(@Param("filial") String filial,
+                                                @Param("startDate") LocalDate startDate,
+                                                @Param("endDate") LocalDate endDate,
+                                                @Param("ganho") Boolean ganho,
+                                                Pageable pageable);
+
+    @Query("SELECT v FROM Venda v WHERE " +
+           "(COALESCE(:ganho, NULL) IS NULL OR v.ganho = :ganho) AND " +
+           "(COALESCE(:startDate, NULL) IS NULL OR v.data >= :startDate) AND " +
+           "(COALESCE(:endDate, NULL) IS NULL OR v.data <= :endDate)")
+    Page<Venda> findByDataBetweenAndGanho(@Param("startDate") LocalDate startDate,
+                                           @Param("endDate") LocalDate endDate,
+                                           @Param("ganho") Boolean ganho,
+                                           Pageable pageable);
+
+    @Query("SELECT v FROM Venda v WHERE v.ganho = :ganho")
+    Page<Venda> findByGanho(@Param("ganho") Boolean ganho, Pageable pageable);
+
     @Query("SELECT v FROM Venda v")
     Page<Venda> findAllVendas(Pageable pageable);
 }
