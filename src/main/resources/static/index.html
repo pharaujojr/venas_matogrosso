@@ -644,6 +644,11 @@
                     <button class="btn btn-secondary" onclick="clearDashFilters()" style="margin-bottom: 2px;">Limpar</button>
                     <div style="margin-left: auto; display: flex; gap: 30px; text-align: right;">
                         <div>
+                            <small style="color: var(--accent); display: block;">VENDAS COM GANHO</small>
+                            <small style="color: var(--accent); font-size: 0.75em;">(Filtros aplicados)</small>
+                            <span id="dashVendasGanho" style="font-size: 1.8em; font-weight: bold; color: #00bcf2; display: block;">0</span>
+                        </div>
+                        <div>
                             <small style="color: var(--accent); display: block;">TICKET MÉDIO</small>
                             <small style="color: var(--accent); font-size: 0.75em;">(Filtros aplicados)</small>
                             <span id="dashTicketMedio" style="font-size: 1.8em; font-weight: bold; color: #00bcf2; display: block;">R$ 0,00</span>
@@ -2680,6 +2685,8 @@
                 stats.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             document.getElementById('dashTicketMedio').innerText = 
                 stats.ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById('dashVendasGanho').innerText = 
+                stats.vendasComGanho || 0;
         }
 
         function renderChartProdutos(data) {

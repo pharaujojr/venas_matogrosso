@@ -148,6 +148,37 @@ public class VendaRepositoryImpl implements VendaRepositoryCustom {
     }
 
     @Override
+    public long countVendasComGanhoFiltradas(
+            LocalDate dataInicio,
+            LocalDate dataFim,
+            List<String> times,
+            List<String> vendedores,
+            List<String> grupos,
+            List<String> produtos) {
+        
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT COUNT(v.id) FROM financeiro_clientes v ");
+        sql.append("WHERE v.data BETWEEN :dataInicio AND :dataFim ");
+        sql.append("AND v.ganho = true ");
+        
+        if (times != null && !times.isEmpty()) {
+            sql.append("AND v.filial IN (:times) ");
+        }
+        if (vendedores != null && !vendedores.isEmpty()) {
+            sql.append("AND v.vendedor IN (:vendedores) ");
+        }
+        
+        var query = entityManager.createNativeQuery(sql.toString());
+        query.setParameter("dataInicio", dataInicio);
+        query.setParameter("dataFim", dataFim);
+        
+        if (times != null && !times.isEmpty()) query.setParameter("times", times);
+        if (vendedores != null && !vendedores.isEmpty()) query.setParameter("vendedores", vendedores);
+        
+        return ((Number) query.getSingleResult()).longValue();
+    }
+
+    @Override
     public List<Map<String, Object>> findVendasPorVendedorDynamic(
             LocalDate dataInicio,
             LocalDate dataFim,

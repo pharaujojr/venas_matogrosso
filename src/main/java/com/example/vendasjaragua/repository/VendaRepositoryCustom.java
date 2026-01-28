@@ -23,6 +23,12 @@ public interface VendaRepositoryCustom {
                              List<String> grupos,
                              List<String> produtos);
     
+    long countVendasComGanhoFiltradas(LocalDate inicio, LocalDate fim,
+                                      List<String> times, 
+                                      List<String> vendedores,
+                                      List<String> grupos,
+                                      List<String> produtos);
+    
     List<Map<String, Object>> findVendasPorVendedorDynamic(LocalDate inicio, LocalDate fim,
                                                 List<String> times, 
                                                 List<String> vendedores,

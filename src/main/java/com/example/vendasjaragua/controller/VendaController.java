@@ -697,6 +697,7 @@ public class VendaController {
             .sum();
         
         long count = vendaRepository.countVendasFiltradas(inicio, fim, filiais, vendedores, grupos, produtos);
+        long vendasComGanho = vendaRepository.countVendasComGanhoFiltradas(inicio, fim, filiais, vendedores, grupos, produtos);
         
         double ticketMedio = count > 0 ? total / count : 0;
         
@@ -704,6 +705,7 @@ public class VendaController {
         stats.put("total", total);
         stats.put("quantidade", count);
         stats.put("ticketMedio", ticketMedio);
+        stats.put("vendasComGanho", vendasComGanho);
         
         return new ResponseEntity<>(stats, HttpStatus.OK);
     }
