@@ -428,6 +428,48 @@
             margin-right: 8px;
             width: auto;
         }
+
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .switch input:checked + span {
+            background-color: #00bcf2;
+        }
+        .switch input:checked + span + span {
+            transform: translateX(26px);
+        }
+        .switch span:first-of-type {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .switch span:last-of-type {
+            position: absolute;
+            cursor: pointer;
+            content: '';
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
     </style>
 </head>
 <body>
@@ -775,6 +817,25 @@
                 <div class="form-group" style="margin: 0;">
                     <label>Observação</label>
                     <textarea id="observacao" rows="3" style="resize: vertical; font-family: inherit; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 4px; color: #fff; width: 100%; box-sizing: border-box;"></textarea>
+                </div>
+            </div>
+
+            <!-- Closing Day Section -->
+            <div style="margin-top: 15px; padding: 15px; background: rgba(255,165,0,0.1); border-radius: 8px; border: 1px solid rgba(255,165,0,0.3);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h4 style="margin: 0; color: #ffa500;">🎈 Closing Day</h4>
+                        <label class="switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
+                            <input type="checkbox" id="closingToggle" onchange="toggleClosingField()" style="opacity: 0; width: 0; height: 0;">
+                            <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px;"></span>
+                            <span style="position: absolute; cursor: pointer; content: ''; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%;"></span>
+                        </label>
+                    </div>
+                    <small style="color: var(--accent); font-style: italic;">Ative para registrar bônus da campanha</small>
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label>Valor do Bônus (Balão)</label>
+                    <input type="number" id="balaoClosing" step="0.01" placeholder="R$ 0,00" disabled style="width: 200px;">
                 </div>
             </div>
 
@@ -1183,7 +1244,7 @@
 
             // Reset fields
             // Removed 'inversor' from fields logic, handled via List now.
-            const fields = ['cliente', 'telefone', 'cidade', 'estado', 'vendedorSelect', 'timeSelect', 'data', 'placas', 'potencia', 'valorVenda', 'valorMaterial', 'nf', 'ov', 'formaPagamento', 'observacao'];
+            const fields = ['cliente', 'telefone', 'cidade', 'estado', 'vendedorSelect', 'timeSelect', 'data', 'placas', 'potencia', 'valorVenda', 'valorMaterial', 'nf', 'ov', 'formaPagamento', 'observacao', 'balaoClosing'];
             fields.forEach(f => {
                 const el = document.getElementById(f);
                 if(el) {
@@ -1196,6 +1257,10 @@
                     el.disabled = false;
                 }
             });
+            
+            // Reset closing toggle
+            document.getElementById('closingToggle').checked = false;
+            toggleClosingField();
             
             // Enable Cart Inputs
             document.getElementById('itemGrupoSelect').disabled = false;
@@ -1264,6 +1329,11 @@
             document.getElementById('ov').value = venda.ov || '';
             document.getElementById('formaPagamento').value = venda.formaPagamento || '';
             document.getElementById('observacao').value = venda.observacao || '';
+            
+            // Closing fields
+            document.getElementById('closingToggle').checked = venda.closing || false;
+            document.getElementById('balaoClosing').value = venda.balaoClosing || '';
+            toggleClosingField();
 
             // Update tables with the already-loaded data
             updateCartTable();
@@ -1272,6 +1342,9 @@
             // Disable Everything
             const fields = ['cliente', 'telefone', 'cidade', 'estado', 'vendedorSelect', 'timeSelect', 'data', 'placas', 'potencia', 'nf', 'ov', 'formaPagamento', 'observacao']; // Valors are readonly anyway
             fields.forEach(f => document.getElementById(f).disabled = true);
+            
+            // Disable closing toggle
+            document.getElementById('closingToggle').disabled = true;
 
             // Disable Cart Inputs
             document.getElementById('itemGrupoSelect').disabled = true;
@@ -1305,6 +1378,10 @@
             
             const fields = ['cliente', 'telefone', 'cidade', 'estado', 'vendedorSelect', 'timeSelect', 'data', 'placas', 'potencia', 'nf', 'ov', 'formaPagamento', 'observacao'];
             fields.forEach(f => document.getElementById(f).disabled = false);
+            
+            // Enable closing toggle
+            document.getElementById('closingToggle').disabled = false;
+            toggleClosingField(); // Re-evaluate if balao field should be enabled
 
             document.getElementById('itemGrupoSelect').disabled = false;
             document.getElementById('itemProdutoSelect').disabled = false;
@@ -1939,6 +2016,22 @@
             }
         }
 
+        function toggleClosingField() {
+            const toggle = document.getElementById('closingToggle');
+            const balaoField = document.getElementById('balaoClosing');
+            
+            if (toggle.checked) {
+                balaoField.disabled = false;
+                balaoField.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                balaoField.style.borderColor = 'var(--border-color)';
+            } else {
+                balaoField.disabled = true;
+                balaoField.value = '';
+                balaoField.style.backgroundColor = 'rgba(0,0,0,0.2)';
+                balaoField.style.borderColor = 'rgba(255,255,255,0.1)';
+            }
+        }
+
         async function salvarVenda() {
             const status = document.getElementById('saveStatus');
             const id = document.getElementById('vendaId').value;
@@ -1977,7 +2070,9 @@
                 nf: document.getElementById('nf').value,
                 ov: document.getElementById('ov').value,
                 formaPagamento: document.getElementById('formaPagamento').value || null,
-                observacao: document.getElementById('observacao').value || null
+                observacao: document.getElementById('observacao').value || null,
+                closing: document.getElementById('closingToggle').checked,
+                balaoClosing: document.getElementById('closingToggle').checked ? (document.getElementById('balaoClosing').value || 0) : 0
             };
 
             const method = id ? 'PUT' : 'POST';

@@ -75,6 +75,11 @@ public class Venda {
     private String formaPagamento;
     
     private Boolean ganho = true; // Padrão: true para novas vendas
+    
+    private Boolean closing = false; // Padrão: false para novas vendas
+    
+    @Column(name = "balao_closing")
+    private BigDecimal balaoClosing = BigDecimal.ZERO; // Bônus da campanha Closing Day
 
     @PrePersist
     public void prePersist() {
@@ -89,6 +94,12 @@ public class Venda {
         }
         if (ganho == null) {
             ganho = true; // Padrão: true
+        }
+        if (closing == null) {
+            closing = false; // Padrão: false
+        }
+        if (balaoClosing == null) {
+            balaoClosing = BigDecimal.ZERO;
         }
     }
 
