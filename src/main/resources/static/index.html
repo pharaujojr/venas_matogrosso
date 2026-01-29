@@ -764,24 +764,6 @@
                         <label>Até:</label>
                         <input type="date" id="closingDataFim" onchange="loadClosingDayDashboard()">
                     </div>
-                    <div class="form-group" style="margin:0; min-width: 180px;">
-                        <label>Filiais:</label>
-                        <div class="multiselect" id="msClosingFiliais">
-                            <div class="multiselect-head" onclick="toggleMs('msClosingFiliaisBody')">Todos</div>
-                            <div class="multiselect-body" id="msClosingFiliaisBody">
-                                <input type="text" class="ms-search" placeholder="Buscar..." onkeyup="filterMs('msClosingFiliaisBody', this.value)" onclick="event.stopPropagation()">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group" style="margin:0; min-width: 180px;">
-                        <label>Vendedores:</label>
-                        <div class="multiselect" id="msClosingVendedores">
-                            <div class="multiselect-head" onclick="toggleMs('msClosingVendedoresBody')">Todos</div>
-                            <div class="multiselect-body" id="msClosingVendedoresBody">
-                                <input type="text" class="ms-search" placeholder="Buscar..." onkeyup="filterMs('msClosingVendedoresBody', this.value)" onclick="event.stopPropagation()">
-                            </div>
-                        </div>
-                    </div>
                     <button class="btn btn-secondary" onclick="clearClosingFilters()" style="margin-bottom: 2px;">Limpar</button>
                     <div style="margin-left: auto; display: flex; gap: 30px; text-align: right;">
                         <div>
@@ -791,12 +773,12 @@
                         </div>
                         <div>
                             <small style="color: var(--accent); display: block;">TICKET MÉDIO</small>
-                            <small style="color: var(--accent); font-size: 0.75em;">(Filtros aplicados)</small>
+                            <small style="color: var(--accent); font-size: 0.75em;">(Período selecionado)</small>
                             <span id="closingTicketMedio" style="font-size: 1.8em; font-weight: bold; color: #00bcf2; display: block;">R$ 0,00</span>
                         </div>
                         <div>
                             <small style="color: var(--accent); display: block;">TOTAL CLOSING DAY</small>
-                            <small style="color: var(--accent); font-size: 0.75em;">(Filtros aplicados)</small>
+                            <small style="color: var(--accent); font-size: 0.75em;">(Período selecionado)</small>
                             <span id="closingTotalPeriodo" style="font-size: 1.8em; font-weight: bold; color: #00bcf2; display: block;">R$ 0,00</span>
                         </div>
                     </div>
@@ -804,28 +786,95 @@
             </div>
 
             <div class="cadastros-grid">
-                <!-- Gauge Único -->
+                <!-- 4 Gauges por Filial -->
                 <div class="cadastro-panel">
                     <div class="cadastro-header" style="position: relative;">
-                        <h3 style="margin:0">🎯 Meta Closing Day</h3>
+                        <h3 style="margin:0">🎯 Metas por Filial</h3>
                         <button onclick="openMetasModal()" style="background: none; border: none; color: var(--accent); cursor: pointer; font-size: 1.2em; padding: 5px; transition: color 0.2s;" title="Configurar Metas">⚙️</button>
                     </div>
-                    <div style="height: 300px; position: relative; padding: 20px;">
-                        <canvas id="gaugeClosing"></canvas>
-                    </div>
-                    <div style="text-align: center; margin-top: 10px;">
-                        <div style="color: var(--accent); font-size: 0.9em; margin-bottom: 5px;">Meta Total:</div>
-                        <div id="closingMetaTotal" style="font-size: 1.4em; font-weight: bold; color: #00bcf2;">R$ 0,00</div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 20px;">
+                        <div style="text-align: center;">
+                            <div style="height: 140px; position: relative;">
+                                <canvas id="gaugeFilial1"></canvas>
+                            </div>
+                            <div id="filial1Name" style="color: var(--accent); font-size: 0.85em; margin-top: 5px; font-weight: 600;">Filial 1</div>
+                            <div id="filial1Meta" style="font-size: 0.8em; color: var(--text-light);">Meta: R$ 0,00</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="height: 140px; position: relative;">
+                                <canvas id="gaugeFilial2"></canvas>
+                            </div>
+                            <div id="filial2Name" style="color: var(--accent); font-size: 0.85em; margin-top: 5px; font-weight: 600;">Filial 2</div>
+                            <div id="filial2Meta" style="font-size: 0.8em; color: var(--text-light);">Meta: R$ 0,00</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="height: 140px; position: relative;">
+                                <canvas id="gaugeFilial3"></canvas>
+                            </div>
+                            <div id="filial3Name" style="color: var(--accent); font-size: 0.85em; margin-top: 5px; font-weight: 600;">Filial 3</div>
+                            <div id="filial3Meta" style="font-size: 0.8em; color: var(--text-light);">Meta: R$ 0,00</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="height: 140px; position: relative;">
+                                <canvas id="gaugeFilial4"></canvas>
+                            </div>
+                            <div id="filial4Name" style="color: var(--accent); font-size: 0.85em; margin-top: 5px; font-weight: 600;">Filial 4</div>
+                            <div id="filial4Meta" style="font-size: 0.8em; color: var(--text-light);">Meta: R$ 0,00</div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Top Vendedores Closing Day -->
+                <!-- Top Vendedores com Filtros -->
                 <div class="cadastro-panel">
                     <div class="cadastro-header">
-                        <h3 style="margin:0">🏆 Top Vendedores - Closing Day</h3>
+                        <h3 style="margin:0 0 10px 0">🏆 Top Vendedores - Closing Day</h3>
+                    </div>
+                    <div style="display: flex; gap: 10px; padding: 0 15px 10px 15px; flex-wrap: wrap;">
+                        <div class="form-group" style="margin:0; min-width: 160px; flex: 1;">
+                            <label style="font-size: 0.85em;">Filiais:</label>
+                            <div class="multiselect" id="msClosingFiliais">
+                                <div class="multiselect-head" onclick="toggleMs('msClosingFiliaisBody')">Todos</div>
+                                <div class="multiselect-body" id="msClosingFiliaisBody">
+                                    <input type="text" class="ms-search" placeholder="Buscar..." onkeyup="filterMs('msClosingFiliaisBody', this.value)" onclick="event.stopPropagation()">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin:0; min-width: 160px; flex: 1;">
+                            <label style="font-size: 0.85em;">Vendedores:</label>
+                            <div class="multiselect" id="msClosingVendedores">
+                                <div class="multiselect-head" onclick="toggleMs('msClosingVendedoresBody')">Todos</div>
+                                <div class="multiselect-body" id="msClosingVendedoresBody">
+                                    <input type="text" class="ms-search" placeholder="Buscar..." onkeyup="filterMs('msClosingVendedoresBody', this.value)" onclick="event.stopPropagation()">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div style="height: 300px; position: relative; padding: 10px;">
                         <canvas id="chartClosingVendedores"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gauge Geral (nova linha abaixo) -->
+            <div style="margin-top: 20px;">
+                <div class="cadastro-panel">
+                    <div class="cadastro-header">
+                        <h3 style="margin:0">🎯 Meta Geral - Closing Day</h3>
+                    </div>
+                    <div style="display: flex; align-items: center; padding: 30px;">
+                        <div style="flex: 1; height: 280px; position: relative;">
+                            <canvas id="gaugeClosingGeral"></canvas>
+                        </div>
+                        <div style="flex: 0 0 250px; padding-left: 30px; text-align: center;">
+                            <div style="margin-bottom: 25px;">
+                                <div style="color: var(--accent); font-size: 0.95em; margin-bottom: 8px;">Meta Total:</div>
+                                <div id="closingMetaTotalGeral" style="font-size: 2em; font-weight: bold; color: #00bcf2;">R$ 0,00</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--accent); font-size: 0.95em; margin-bottom: 8px;">Realizado:</div>
+                                <div id="closingRealizadoGeral" style="font-size: 2em; font-weight: bold; color: #00ff41;">R$ 0,00</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3452,6 +3501,8 @@
         let closingDayRefreshInterval = null;
         const CLOSING_DAY_REFRESH_TIME = 30000; // 30 seconds
         let lastClosingDashboardData = null;
+        let gaugeFilialInstances = [null, null, null, null];
+        let gaugeGeralInstance = null;
         
         async function initClosingDayFilters() {
             const today = new Date();
@@ -3546,26 +3597,31 @@
             params.push('closing=true');
             params.push('ganho=true');
             
+            // Filtros para Top Vendedores
             const selectedFiliais = getCheckedValues('msClosingFiliaisBody');
+            const selectedVens = getCheckedValues('msClosingVendedoresBody');
+            
+            let vendedoresQueryString = queryString;
+            const vendedoresParams = [...params];
             if (selectedFiliais.length > 0) {
                 selectedFiliais.forEach(f => {
-                    params.push(`filiais=${encodeURIComponent(f)}`);
+                    vendedoresParams.push(`filiais=${encodeURIComponent(f)}`);
                 });
             }
-            
-            const selectedVens = getCheckedValues('msClosingVendedoresBody');
             if (selectedVens.length > 0) {
                 selectedVens.forEach(v => {
-                    params.push(`vendedores=${encodeURIComponent(v)}`);
+                    vendedoresParams.push(`vendedores=${encodeURIComponent(v)}`);
                 });
             }
+            vendedoresQueryString = vendedoresParams.length > 0 ? '?' + vendedoresParams.join('&') : '';
             
             if (params.length > 0) queryString = '?' + params.join('&');
             
             try {
-                const [stats, vendedores] = await Promise.all([
+                const [stats, vendedores, timeStats] = await Promise.all([
                     fetch(`/api/vendas/dashboard/stats${queryString}`).then(r => r.json()),
-                    fetch(`/api/vendas/dashboard/vendedores${queryString}`).then(r => r.json())
+                    fetch(`/api/vendas/dashboard/vendedores${vendedoresQueryString}`).then(r => r.json()),
+                    fetch(`/api/vendas/dashboard/times${queryString}`).then(r => r.json())
                 ]);
                 
                 // Cria hash dos dados para comparação
@@ -3573,7 +3629,8 @@
                     total: stats.total,
                     count: stats.vendasComGanho,
                     ticket: stats.ticketMedio,
-                    vendedores: vendedores.map(v => ({ vendedor: v.vendedor, total: v.total }))
+                    vendedores: vendedores.map(v => ({ vendedor: v.vendedor, total: v.total })),
+                    times: timeStats
                 });
                 
                 // Verifica se houve mudança nos dados
@@ -3587,27 +3644,11 @@
                     document.getElementById('closingTicketMedio').innerText = 
                         stats.ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
                     
-                    renderClosingGauge(stats.total, selectedFiliais);
+                    renderClosingGaugesByFilial(timeStats);
+                    renderClosingGeralGauge(stats.total);
                     renderChartClosingVendedores(vendedores);
                     
                     lastClosingDashboardData = currentDataHash;
-                } else {
-                    // Dados não mudaram, apenas atualiza metas se necessário sem redesenhar gráficos
-                    const metaElement = document.getElementById('closingMetaTotal');
-                    let metaTotal = 0;
-                    if (selectedFiliais && selectedFiliais.length > 0) {
-                        selectedFiliais.forEach(f => {
-                            metaTotal += closingDayMetas[f] || 0;
-                        });
-                    } else {
-                        closingFiliaisDisponiveis.forEach(f => {
-                            metaTotal += closingDayMetas[f] || 0;
-                        });
-                    }
-                    const metaText = metaTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-                    if (metaElement.innerText !== metaText) {
-                        metaElement.innerText = metaText;
-                    }
                 }
                 
             } catch(e) {
@@ -3615,29 +3656,122 @@
             }
         }
         
-        function renderClosingGauge(currentValue, selectedFiliais) {
+        function renderClosingGaugesByFilial(timeStats) {
+            // timeStats é array de [filialNome, total]
+            const filiais = timeStats.slice(0, 4); // Pega no máximo 4 filiais
+            
+            filiais.forEach((filial, index) => {
+                const filialNome = filial[0];
+                const realizado = filial[1];
+                const meta = closingDayMetas[filialNome] || 0;
+                
+                // Atualiza nome e meta
+                document.getElementById(`filial${index + 1}Name`).innerText = filialNome;
+                document.getElementById(`filial${index + 1}Meta`).innerText = 
+                    `Meta: ${meta.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
+                
+                const percentage = meta > 0 ? Math.min((realizado / meta) * 100, 100) : 0;
+                const remaining = 100 - percentage;
+                
+                let gaugeColor = '#e81123';
+                if (percentage >= 100) gaugeColor = '#107c10';
+                else if (percentage >= 75) gaugeColor = '#ff8c00';
+                else if (percentage >= 50) gaugeColor = '#ffc000';
+                
+                const ctx = document.getElementById(`gaugeFilial${index + 1}`).getContext('2d');
+                
+                if (gaugeFilialInstances[index]) {
+                    gaugeFilialInstances[index].destroy();
+                }
+                
+                gaugeFilialInstances[index] = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Atingido', 'Restante'],
+                        datasets: [{
+                            data: [percentage, remaining],
+                            backgroundColor: [gaugeColor, 'rgba(255,255,255,0.1)'],
+                            borderWidth: 0,
+                            circumference: 180,
+                            rotation: 270
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        if (context.dataIndex === 0) {
+                                            return `Atingido: ${percentage.toFixed(1)}%`;
+                                        }
+                                        return '';
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '70%'
+                    },
+                    plugins: [{
+                        afterDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            const width = chart.width;
+                            const height = chart.height;
+                            
+                            ctx.restore();
+                            ctx.font = 'bold 1.3em "Segoe UI", sans-serif';
+                            ctx.textBaseline = 'middle';
+                            ctx.textAlign = 'center';
+                            
+                            const text = percentage.toFixed(1) + '%';
+                            const textX = width / 2;
+                            const textY = height / 2 + 15;
+                            
+                            ctx.fillStyle = gaugeColor;
+                            ctx.fillText(text, textX, textY);
+                            
+                            ctx.font = '0.7em "Segoe UI", sans-serif';
+                            ctx.fillStyle = '#e0e1dd';
+                            const valueText = realizado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                            ctx.fillText(valueText, textX, textY + 20);
+                            
+                            ctx.save();
+                        }
+                    }]
+                });
+            });
+            
+            // Limpa gauges não usados
+            for (let i = filiais.length; i < 4; i++) {
+                document.getElementById(`filial${i + 1}Name`).innerText = '-';
+                document.getElementById(`filial${i + 1}Meta`).innerText = 'Meta: R$ 0,00';
+                if (gaugeFilialInstances[i]) {
+                    gaugeFilialInstances[i].destroy();
+                    gaugeFilialInstances[i] = null;
+                }
+            }
+        }
+        
+        function renderClosingGeralGauge(totalRealizado) {
             let metaTotal = 0;
+            closingFiliaisDisponiveis.forEach(f => {
+                metaTotal += closingDayMetas[f] || 0;
+            });
             
-            if (selectedFiliais && selectedFiliais.length > 0) {
-                selectedFiliais.forEach(f => {
-                    metaTotal += closingDayMetas[f] || 0;
-                });
-            } else {
-                closingFiliaisDisponiveis.forEach(f => {
-                    metaTotal += closingDayMetas[f] || 0;
-                });
-            }
-            
-            document.getElementById('closingMetaTotal').innerText = 
+            document.getElementById('closingMetaTotalGeral').innerText = 
                 metaTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById('closingRealizadoGeral').innerText = 
+                totalRealizado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             
-            const ctx = document.getElementById('gaugeClosing').getContext('2d');
+            const ctx = document.getElementById('gaugeClosingGeral').getContext('2d');
             
-            if (closingGaugeInstance) {
-                closingGaugeInstance.destroy();
+            if (gaugeGeralInstance) {
+                gaugeGeralInstance.destroy();
             }
             
-            const percentage = metaTotal > 0 ? Math.min((currentValue / metaTotal) * 100, 100) : 0;
+            const percentage = metaTotal > 0 ? Math.min((totalRealizado / metaTotal) * 100, 100) : 0;
             const remaining = 100 - percentage;
             
             let gaugeColor = '#e81123';
@@ -3645,7 +3779,7 @@
             else if (percentage >= 75) gaugeColor = '#ff8c00';
             else if (percentage >= 50) gaugeColor = '#ffc000';
             
-            closingGaugeInstance = new Chart(ctx, {
+            gaugeGeralInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Atingido', 'Restante'],
@@ -3682,7 +3816,7 @@
                         const height = chart.height;
                         
                         ctx.restore();
-                        ctx.font = 'bold 2em "Segoe UI", sans-serif';
+                        ctx.font = 'bold 2.5em "Segoe UI", sans-serif';
                         ctx.textBaseline = 'middle';
                         ctx.textAlign = 'center';
                         
@@ -3692,11 +3826,6 @@
                         
                         ctx.fillStyle = gaugeColor;
                         ctx.fillText(text, textX, textY);
-                        
-                        ctx.font = '0.9em "Segoe UI", sans-serif';
-                        ctx.fillStyle = '#e0e1dd';
-                        const valueText = currentValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-                        ctx.fillText(valueText, textX, textY + 30);
                         
                         ctx.save();
                     }
