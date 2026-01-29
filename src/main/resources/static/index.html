@@ -1317,7 +1317,7 @@
             }
         }
 
-        function switchTab(tabName) {
+        async function switchTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
             
@@ -1333,7 +1333,7 @@
             }
             if (tabName === 'closingDay') { 
                 buttons[4].classList.add('active');
-                initClosingDayFilters();
+                await initClosingDayFilters();
                 loadClosingDayDashboard();
                 startClosingDayAutoRefresh();
             } else {
@@ -3451,6 +3451,7 @@
         const CLOSING_METAS_KEY = 'closing_day_metas';
         let closingDayRefreshInterval = null;
         const CLOSING_DAY_REFRESH_TIME = 30000; // 30 seconds
+        let lastClosingDashboardData = null;
         
         async function initClosingDayFilters() {
             const today = new Date();
@@ -3486,7 +3487,7 @@
                 setupMultiSelect('msClosingFiliaisBody', closingFiliaisDisponiveis, loadClosingDayDashboard);
                 setupMultiSelect('msClosingVendedoresBody', vendedoresUnicos, loadClosingDayDashboard);
                 
-                loadMetasFromStorage();
+                await loadMetasFromStorage();
                 
             } catch(e) {
                 console.error("Erro ao carregar filtros Closing Day", e);
@@ -3567,15 +3568,47 @@
                     fetch(`/api/vendas/dashboard/vendedores${queryString}`).then(r => r.json())
                 ]);
                 
-                document.getElementById('closingTotalPeriodo').innerText = 
-                    stats.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-                document.getElementById('closingVendasCount').innerText = 
-                    stats.vendasComGanho || 0;
-                document.getElementById('closingTicketMedio').innerText = 
-                    stats.ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                // Cria hash dos dados para comparação
+                const currentDataHash = JSON.stringify({
+                    total: stats.total,
+                    count: stats.vendasComGanho,
+                    ticket: stats.ticketMedio,
+                    vendedores: vendedores.map(v => ({ vendedor: v.vendedor, total: v.total }))
+                });
                 
-                renderClosingGauge(stats.total, selectedFiliais);
-                renderChartClosingVendedores(vendedores);
+                // Verifica se houve mudança nos dados
+                const hasChanged = lastClosingDashboardData !== currentDataHash;
+                
+                if (hasChanged) {
+                    document.getElementById('closingTotalPeriodo').innerText = 
+                        stats.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                    document.getElementById('closingVendasCount').innerText = 
+                        stats.vendasComGanho || 0;
+                    document.getElementById('closingTicketMedio').innerText = 
+                        stats.ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                    
+                    renderClosingGauge(stats.total, selectedFiliais);
+                    renderChartClosingVendedores(vendedores);
+                    
+                    lastClosingDashboardData = currentDataHash;
+                } else {
+                    // Dados não mudaram, apenas atualiza metas se necessário sem redesenhar gráficos
+                    const metaElement = document.getElementById('closingMetaTotal');
+                    let metaTotal = 0;
+                    if (selectedFiliais && selectedFiliais.length > 0) {
+                        selectedFiliais.forEach(f => {
+                            metaTotal += closingDayMetas[f] || 0;
+                        });
+                    } else {
+                        closingFiliaisDisponiveis.forEach(f => {
+                            metaTotal += closingDayMetas[f] || 0;
+                        });
+                    }
+                    const metaText = metaTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                    if (metaElement.innerText !== metaText) {
+                        metaElement.innerText = metaText;
+                    }
+                }
                 
             } catch(e) {
                 console.error("Erro ao carregar dashboard Closing Day", e);
