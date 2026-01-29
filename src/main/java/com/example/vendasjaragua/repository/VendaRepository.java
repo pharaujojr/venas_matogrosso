@@ -20,8 +20,12 @@ public interface VendaRepository extends JpaRepository<Venda, Long>, VendaReposi
     List<Object[]> findVendasPorVendedor(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim, @Param("filiais") List<String> filiais, @Param("vendedores") List<String> vendedores);
 
 
-    @Query("SELECT v.time, SUM(v.valorVenda) FROM Venda v WHERE v.data BETWEEN :inicio AND :fim AND v.ganho = true GROUP BY v.time ORDER BY SUM(v.valorVenda) DESC")
-    List<Object[]> findVendasPorTime(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
+    @Query("SELECT v.time, SUM(v.valorVenda) FROM Venda v WHERE v.data BETWEEN :inicio AND :fim " +
+           "AND (:ganho IS NULL OR v.ganho = :ganho) " +
+           "AND (:closing IS NULL OR v.closing = :closing) " +
+           "GROUP BY v.time ORDER BY SUM(v.valorVenda) DESC")
+    List<Object[]> findVendasPorTime(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim, 
+                                      @Param("closing") Boolean closing, @Param("ganho") Boolean ganho);
 
     @Query("SELECT v.vendedor, SUM(v.valorVenda) FROM Venda v WHERE v.ganho = true AND v.time = :filial AND v.data BETWEEN :inicio AND :fim GROUP BY v.vendedor ORDER BY SUM(v.valorVenda) DESC")
     List<Object[]> findVendasPorVendedorAndTime(@Param("filial") String filial, @Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);

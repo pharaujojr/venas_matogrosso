@@ -490,6 +490,7 @@
             <button class="tab-button" onclick="switchTab('cadastros')">Representantes</button>
             <button class="tab-button" onclick="switchTab('produtos')">Produtos</button>
             <button class="tab-button" onclick="switchTab('dashboards')">Dashboards</button>
+            <button class="tab-button" onclick="switchTab('closingDay')">Closing Day</button>
         </div>
 
         <!-- TAB VENDAS -->
@@ -744,6 +745,87 @@
                     <h3 style="margin:0 0 15px 0;">Vendas por Filial</h3>
                     <div style="height: 350px; position: relative;">
                         <canvas id="chartTimesPie"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB CLOSING DAY -->
+        <div id="tab-closingDay" class="tab-content">
+            
+            <!-- Filters & Stats -->
+            <div style="background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-color);">
+                <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 15px; margin-bottom: 15px;">
+                    <div class="form-group" style="margin:0; min-width: 150px;">
+                        <label>De:</label>
+                        <input type="date" id="closingDataInicio" onchange="loadClosingDayDashboard()">
+                    </div>
+                    <div class="form-group" style="margin:0; min-width: 150px;">
+                        <label>Até:</label>
+                        <input type="date" id="closingDataFim" onchange="loadClosingDayDashboard()">
+                    </div>
+                    <div class="form-group" style="margin:0; min-width: 180px;">
+                        <label>Filiais:</label>
+                        <div class="multiselect" id="msClosingFiliais">
+                            <div class="multiselect-head" onclick="toggleMs('msClosingFiliaisBody')">Todos</div>
+                            <div class="multiselect-body" id="msClosingFiliaisBody">
+                                <input type="text" class="ms-search" placeholder="Buscar..." onkeyup="filterMs('msClosingFiliaisBody', this.value)" onclick="event.stopPropagation()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin:0; min-width: 180px;">
+                        <label>Vendedores:</label>
+                        <div class="multiselect" id="msClosingVendedores">
+                            <div class="multiselect-head" onclick="toggleMs('msClosingVendedoresBody')">Todos</div>
+                            <div class="multiselect-body" id="msClosingVendedoresBody">
+                                <input type="text" class="ms-search" placeholder="Buscar..." onkeyup="filterMs('msClosingVendedoresBody', this.value)" onclick="event.stopPropagation()">
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="clearClosingFilters()" style="margin-bottom: 2px;">Limpar</button>
+                    <div style="margin-left: auto; display: flex; gap: 30px; text-align: right;">
+                        <div>
+                            <small style="color: var(--accent); display: block;">VENDAS CLOSING DAY</small>
+                            <small style="color: var(--accent); font-size: 0.75em;">(com Ganho)</small>
+                            <span id="closingVendasCount" style="font-size: 1.8em; font-weight: bold; color: #00bcf2; display: block;">0</span>
+                        </div>
+                        <div>
+                            <small style="color: var(--accent); display: block;">TICKET MÉDIO</small>
+                            <small style="color: var(--accent); font-size: 0.75em;">(Filtros aplicados)</small>
+                            <span id="closingTicketMedio" style="font-size: 1.8em; font-weight: bold; color: #00bcf2; display: block;">R$ 0,00</span>
+                        </div>
+                        <div>
+                            <small style="color: var(--accent); display: block;">TOTAL CLOSING DAY</small>
+                            <small style="color: var(--accent); font-size: 0.75em;">(Filtros aplicados)</small>
+                            <span id="closingTotalPeriodo" style="font-size: 1.8em; font-weight: bold; color: #00bcf2; display: block;">R$ 0,00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cadastros-grid">
+                <!-- Gauge Único -->
+                <div class="cadastro-panel">
+                    <div class="cadastro-header" style="position: relative;">
+                        <h3 style="margin:0">🎯 Meta Closing Day</h3>
+                        <button onclick="openMetasModal()" style="background: none; border: none; color: var(--accent); cursor: pointer; font-size: 1.2em; padding: 5px; transition: color 0.2s;" title="Configurar Metas">⚙️</button>
+                    </div>
+                    <div style="height: 300px; position: relative; padding: 20px;">
+                        <canvas id="gaugeClosing"></canvas>
+                    </div>
+                    <div style="text-align: center; margin-top: 10px;">
+                        <div style="color: var(--accent); font-size: 0.9em; margin-bottom: 5px;">Meta Total:</div>
+                        <div id="closingMetaTotal" style="font-size: 1.4em; font-weight: bold; color: #00bcf2;">R$ 0,00</div>
+                    </div>
+                </div>
+
+                <!-- Top Vendedores Closing Day -->
+                <div class="cadastro-panel">
+                    <div class="cadastro-header">
+                        <h3 style="margin:0">🏆 Top Vendedores - Closing Day</h3>
+                    </div>
+                    <div style="height: 300px; position: relative; padding: 10px;">
+                        <canvas id="chartClosingVendedores"></canvas>
                     </div>
                 </div>
             </div>
@@ -1127,6 +1209,34 @@
         </div>
     </div>
 
+    <!-- MODAL METAS CLOSING DAY -->
+    <div class="modal-overlay" id="metasClosingModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 style="margin:0; font-weight: 300;">⚙️ Configurar Metas - Closing Day</h3>
+                <button class="modal-close" onclick="closeMetasModal()">&times;</button>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <p style="color: var(--accent); font-size: 0.9em; margin: 0;">
+                    Defina as metas em R$ para cada filial. A meta total é calculada automaticamente.
+                </p>
+            </div>
+            <div id="metasListContainer" style="max-height: 400px; overflow-y: auto;">
+                <!-- Lista de metas será populada aqui -->
+            </div>
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <strong style="color: var(--text-light);">Meta Total:</strong>
+                    <strong id="metaTotalDisplay" style="font-size: 1.3em; color: #00bcf2;">R$ 0,00</strong>
+                </div>
+                <div style="text-align: right;">
+                    <button class="btn btn-secondary" onclick="closeMetasModal()">Cancelar</button>
+                    <button class="btn" onclick="saveMetasModal()">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL PRODUTO -->
     <div class="modal-overlay" id="produtoModal">
         <div class="modal-content" style="max-width: 500px;">
@@ -1220,6 +1330,14 @@
             if (tabName === 'dashboards') { 
                 buttons[3].classList.add('active');
                 loadDashboards();
+            }
+            if (tabName === 'closingDay') { 
+                buttons[4].classList.add('active');
+                initClosingDayFilters();
+                loadClosingDayDashboard();
+                startClosingDayAutoRefresh();
+            } else {
+                stopClosingDayAutoRefresh();
             }
         }
 
@@ -3323,6 +3441,438 @@
                 }
             });
         }
+
+        // ==================== CLOSING DAY FUNCTIONS ====================
+        
+        let closingGaugeInstance = null;
+        let chartClosingVendedoresInstance = null;
+        let closingDayMetas = {};
+        let closingFiliaisDisponiveis = [];
+        const CLOSING_METAS_KEY = 'closing_day_metas';
+        let closingDayRefreshInterval = null;
+        const CLOSING_DAY_REFRESH_TIME = 30000; // 30 seconds
+        
+        async function initClosingDayFilters() {
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            
+            const formatDate = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+            
+            document.getElementById('closingDataInicio').value = formatDate(firstDay);
+            document.getElementById('closingDataFim').value = formatDate(lastDay);
+            
+            try {
+                // Use the same endpoints as dashboard
+                const [filiais, vendedoresUnicos] = await Promise.all([
+                    fetch('/api/vendas/filiais').then(r => r.json()),
+                    fetch('/api/vendas/dashboard/vendedores-unicos').then(r => r.json())
+                ]);
+                
+                console.log('Filiais carregadas:', filiais);
+                console.log('Vendedores carregados:', vendedoresUnicos);
+                
+                // filiais is an array of objects with {id, nome, codigo, ativo}
+                const filiaisAtivas = filiais.filter(f => f.ativo);
+                closingFiliaisDisponiveis = filiaisAtivas.map(f => f.nome);
+                
+                console.log('Filiais disponíveis:', closingFiliaisDisponiveis);
+                
+                setupMultiSelect('msClosingFiliaisBody', closingFiliaisDisponiveis, loadClosingDayDashboard);
+                setupMultiSelect('msClosingVendedoresBody', vendedoresUnicos, loadClosingDayDashboard);
+                
+                loadMetasFromStorage();
+                
+            } catch(e) {
+                console.error("Erro ao carregar filtros Closing Day", e);
+            }
+        }
+        
+        async function loadMetasFromStorage() {
+            try {
+                const response = await fetch('/api/closing-day/metas');
+                if (response.ok) {
+                    const metas = await response.json();
+                    closingDayMetas = {};
+                    metas.forEach(meta => {
+                        closingDayMetas[meta.filialNome] = meta.metaValor;
+                    });
+                    console.log('Metas carregadas do banco:', closingDayMetas);
+                } else {
+                    console.log('Nenhuma meta encontrada no banco');
+                    closingDayMetas = {};
+                }
+            } catch(e) {
+                console.error('Erro ao carregar metas do banco:', e);
+                closingDayMetas = {};
+            }
+        }
+        
+        async function saveMetasToStorage() {
+            try {
+                const response = await fetch('/api/closing-day/metas', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(closingDayMetas)
+                });
+                
+                if (response.ok) {
+                    console.log('Metas salvas no banco com sucesso');
+                } else {
+                    console.error('Erro ao salvar metas no banco');
+                }
+            } catch(e) {
+                console.error('Erro ao salvar metas:', e);
+            }
+        }
+        
+        async function loadClosingDayDashboard() {
+            const inicio = document.getElementById('closingDataInicio').value;
+            const fim = document.getElementById('closingDataFim').value;
+            
+            let queryString = '';
+            const params = [];
+            if (inicio) params.push(`inicio=${inicio}`);
+            if (fim) params.push(`fim=${fim}`);
+            
+            params.push('closing=true');
+            params.push('ganho=true');
+            
+            const selectedFiliais = getCheckedValues('msClosingFiliaisBody');
+            if (selectedFiliais.length > 0) {
+                selectedFiliais.forEach(f => {
+                    params.push(`filiais=${encodeURIComponent(f)}`);
+                });
+            }
+            
+            const selectedVens = getCheckedValues('msClosingVendedoresBody');
+            if (selectedVens.length > 0) {
+                selectedVens.forEach(v => {
+                    params.push(`vendedores=${encodeURIComponent(v)}`);
+                });
+            }
+            
+            if (params.length > 0) queryString = '?' + params.join('&');
+            
+            try {
+                const [stats, vendedores] = await Promise.all([
+                    fetch(`/api/vendas/dashboard/stats${queryString}`).then(r => r.json()),
+                    fetch(`/api/vendas/dashboard/vendedores${queryString}`).then(r => r.json())
+                ]);
+                
+                document.getElementById('closingTotalPeriodo').innerText = 
+                    stats.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                document.getElementById('closingVendasCount').innerText = 
+                    stats.vendasComGanho || 0;
+                document.getElementById('closingTicketMedio').innerText = 
+                    stats.ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                
+                renderClosingGauge(stats.total, selectedFiliais);
+                renderChartClosingVendedores(vendedores);
+                
+            } catch(e) {
+                console.error("Erro ao carregar dashboard Closing Day", e);
+            }
+        }
+        
+        function renderClosingGauge(currentValue, selectedFiliais) {
+            let metaTotal = 0;
+            
+            if (selectedFiliais && selectedFiliais.length > 0) {
+                selectedFiliais.forEach(f => {
+                    metaTotal += closingDayMetas[f] || 0;
+                });
+            } else {
+                closingFiliaisDisponiveis.forEach(f => {
+                    metaTotal += closingDayMetas[f] || 0;
+                });
+            }
+            
+            document.getElementById('closingMetaTotal').innerText = 
+                metaTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            
+            const ctx = document.getElementById('gaugeClosing').getContext('2d');
+            
+            if (closingGaugeInstance) {
+                closingGaugeInstance.destroy();
+            }
+            
+            const percentage = metaTotal > 0 ? Math.min((currentValue / metaTotal) * 100, 100) : 0;
+            const remaining = 100 - percentage;
+            
+            let gaugeColor = '#e81123';
+            if (percentage >= 100) gaugeColor = '#107c10';
+            else if (percentage >= 75) gaugeColor = '#ff8c00';
+            else if (percentage >= 50) gaugeColor = '#ffc000';
+            
+            closingGaugeInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Atingido', 'Restante'],
+                    datasets: [{
+                        data: [percentage, remaining],
+                        backgroundColor: [gaugeColor, 'rgba(255,255,255,0.1)'],
+                        borderWidth: 0,
+                        circumference: 180,
+                        rotation: 270
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.dataIndex === 0) {
+                                        return `Atingido: ${percentage.toFixed(1)}%`;
+                                    }
+                                    return '';
+                                }
+                            }
+                        }
+                    },
+                    cutout: '75%'
+                },
+                plugins: [{
+                    afterDraw: function(chart) {
+                        const ctx = chart.ctx;
+                        const width = chart.width;
+                        const height = chart.height;
+                        
+                        ctx.restore();
+                        ctx.font = 'bold 2em "Segoe UI", sans-serif';
+                        ctx.textBaseline = 'middle';
+                        ctx.textAlign = 'center';
+                        
+                        const text = percentage.toFixed(1) + '%';
+                        const textX = width / 2;
+                        const textY = height / 2 + 20;
+                        
+                        ctx.fillStyle = gaugeColor;
+                        ctx.fillText(text, textX, textY);
+                        
+                        ctx.font = '0.9em "Segoe UI", sans-serif';
+                        ctx.fillStyle = '#e0e1dd';
+                        const valueText = currentValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                        ctx.fillText(valueText, textX, textY + 30);
+                        
+                        ctx.save();
+                    }
+                }]
+            });
+        }
+        
+        function renderChartClosingVendedores(data) {
+            const labels = data.map(d => d.vendedor);
+            const values = data.map(d => d.total);
+            
+            const ctx = document.getElementById('chartClosingVendedores').getContext('2d');
+            if (chartClosingVendedoresInstance) chartClosingVendedoresInstance.destroy();
+            
+            const colors = ['#0078d4', '#00bcf2', '#009e49', '#ff8c00', '#e81123', '#881798', '#5c2d91', '#e3008c'];
+            
+            chartClosingVendedoresInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total Vendas',
+                        data: values,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            right: 20
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    return 'R$ ' + ctx.parsed.x.toLocaleString('pt-BR');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#e0e1dd' },
+                            grid: { color: 'rgba(255,255,255,0.1)' }
+                        },
+                        y: {
+                            ticks: { color: '#e0e1dd' },
+                            grid: { display: false }
+                        }
+                    }
+                },
+                plugins: [{
+                    id: 'customLabels',
+                    afterDatasetsDraw: function(chart) {
+                        const ctx = chart.ctx;
+                        chart.data.datasets.forEach((dataset, datasetIndex) => {
+                            const meta = chart.getDatasetMeta(datasetIndex);
+                            meta.data.forEach((bar, index) => {
+                                const value = dataset.data[index];
+                                const formattedValue = 'R$ ' + value.toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+                                
+                                ctx.save();
+                                ctx.font = '600 12px "Segoe UI", sans-serif';
+                                const textWidth = ctx.measureText(formattedValue).width;
+                                const barWidth = bar.x - bar.base;
+                                const minBarWidth = textWidth + 20;
+                                
+                                if (barWidth >= minBarWidth) {
+                                    ctx.fillStyle = 'white';
+                                    ctx.textAlign = 'right';
+                                    ctx.textBaseline = 'middle';
+                                    const xPos = bar.x - 10;
+                                    const yPos = bar.y;
+                                    ctx.fillText(formattedValue, xPos, yPos);
+                                } else {
+                                    ctx.fillStyle = '#e0e1dd';
+                                    ctx.textAlign = 'left';
+                                    ctx.textBaseline = 'middle';
+                                    const xPos = bar.x + 5;
+                                    const yPos = bar.y;
+                                    ctx.fillText(formattedValue, xPos, yPos);
+                                }
+                                ctx.restore();
+                            });
+                        });
+                    }
+                }]
+            });
+        }
+        
+        async function openMetasModal() {
+            await loadMetasFromStorage();
+            
+            console.log('Abrindo modal de metas');
+            console.log('Filiais disponíveis:', closingFiliaisDisponiveis);
+            console.log('Metas atuais:', closingDayMetas);
+            
+            const container = document.getElementById('metasListContainer');
+            container.innerHTML = '';
+            
+            if (closingFiliaisDisponiveis.length === 0) {
+                container.innerHTML = '<p style="color: var(--accent); text-align: center; padding: 20px;">Nenhuma filial disponível. Carregue os dados primeiro.</p>';
+                document.getElementById('metasClosingModal').classList.add('modal-active');
+                return;
+            }
+            
+            closingFiliaisDisponiveis.forEach(filialNome => {
+                const valorAtual = closingDayMetas[filialNome] || 0;
+                
+                const itemDiv = document.createElement('div');
+                itemDiv.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border-color); gap: 15px;';
+                
+                itemDiv.innerHTML = `
+                    <label style="flex: 1; color: var(--text-light); font-size: 0.95em;">${filialNome}</label>
+                    <div style="position: relative; flex: 0 0 200px;">
+                        <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--accent); font-size: 0.9em;">R$</span>
+                        <input type="number" 
+                               step="0.01" 
+                               value="${valorAtual}" 
+                               data-filial="${filialNome}"
+                               onchange="updateMetaTotal()"
+                               style="width: 100%; padding: 8px 8px 8px 35px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 4px; color: #fff; font-size: 0.95em;">
+                    </div>
+                `;
+                
+                container.appendChild(itemDiv);
+            });
+            
+            updateMetaTotal();
+            document.getElementById('metasClosingModal').classList.add('modal-active');
+        }
+        
+        function closeMetasModal() {
+            document.getElementById('metasClosingModal').classList.remove('modal-active');
+        }
+        
+        function updateMetaTotal() {
+            let total = 0;
+            document.querySelectorAll('#metasListContainer input[data-filial]').forEach(input => {
+                const value = parseFloat(input.value) || 0;
+                total += value;
+            });
+            
+            document.getElementById('metaTotalDisplay').innerText = 
+                total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+        
+        async function saveMetasModal() {
+            const newMetas = {};
+            
+            document.querySelectorAll('#metasListContainer input[data-filial]').forEach(input => {
+                const filial = input.getAttribute('data-filial');
+                const value = parseFloat(input.value) || 0;
+                newMetas[filial] = value;
+            });
+            
+            closingDayMetas = newMetas;
+            await saveMetasToStorage();
+            closeMetasModal();
+            loadClosingDayDashboard();
+        }
+        
+        function clearClosingFilters() {
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            
+            const formatDate = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+            
+            document.getElementById('closingDataInicio').value = formatDate(firstDay);
+            document.getElementById('closingDataFim').value = formatDate(lastDay);
+            
+            ['msClosingFiliaisBody', 'msClosingVendedoresBody'].forEach(id => {
+                const container = document.getElementById(id);
+                if(container) {
+                    container.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+                    updateMsLabel(id);
+                }
+            });
+            
+            loadClosingDayDashboard();
+        }
+        
+        function startClosingDayAutoRefresh() {
+            stopClosingDayAutoRefresh();
+            closingDayRefreshInterval = setInterval(() => {
+                loadClosingDayDashboard();
+            }, CLOSING_DAY_REFRESH_TIME);
+        }
+        
+        function stopClosingDayAutoRefresh() {
+            if (closingDayRefreshInterval) {
+                clearInterval(closingDayRefreshInterval);
+                closingDayRefreshInterval = null;
+            }
+        }
+        
+        // ==================== END CLOSING DAY FUNCTIONS ====================
     </script>
 </body>
 </html>

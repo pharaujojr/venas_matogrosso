@@ -571,7 +571,7 @@ public class VendaController {
         if (grupos != null && grupos.isEmpty()) grupos = null;
         if (produtos != null && produtos.isEmpty()) produtos = null;
 
-        return new ResponseEntity<>(vendaRepository.findVendasPorMes(inicio, fim, filiais, vendedores, grupos, produtos), HttpStatus.OK);
+        return new ResponseEntity<>(vendaRepository.findVendasPorMes(inicio, fim, filiais, vendedores, grupos, produtos, null, null), HttpStatus.OK);
     }
 
     @GetMapping("/dashboard/vendedores")
@@ -581,7 +581,9 @@ public class VendaController {
             @RequestParam(required = false) List<String> filiais,
             @RequestParam(required = false) List<String> vendedores,
             @RequestParam(required = false) List<String> grupos,
-            @RequestParam(required = false) List<String> produtos
+            @RequestParam(required = false) List<String> produtos,
+            @RequestParam(required = false) Boolean closing,
+            @RequestParam(required = false) Boolean ganho
     ) {
         if (inicio == null) inicio = LocalDate.of(2000, 1, 1);
         if (fim == null) fim = LocalDate.now().plusYears(100);
@@ -591,7 +593,7 @@ public class VendaController {
         if (grupos != null && grupos.isEmpty()) grupos = null;
         if (produtos != null && produtos.isEmpty()) produtos = null;
 
-        return new ResponseEntity<>(vendaRepository.findVendasPorVendedorDynamic(inicio, fim, filiais, vendedores, grupos, produtos), HttpStatus.OK);
+        return new ResponseEntity<>(vendaRepository.findVendasPorVendedorDynamic(inicio, fim, filiais, vendedores, grupos, produtos, closing, ganho), HttpStatus.OK);
     }
 
     @GetMapping("/dashboard/produtos")
@@ -619,11 +621,13 @@ public class VendaController {
     @GetMapping("/dashboard/times")
     public ResponseEntity<List<Object[]>> getDashboardTimes(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim,
+            @RequestParam(required = false) Boolean closing,
+            @RequestParam(required = false) Boolean ganho
     ) {
         if (inicio == null) inicio = LocalDate.of(2000, 1, 1);
         if (fim == null) fim = LocalDate.now().plusYears(100);
-        return new ResponseEntity<>(vendaRepository.findVendasPorTime(inicio, fim), HttpStatus.OK);
+        return new ResponseEntity<>(vendaRepository.findVendasPorTime(inicio, fim, closing, ganho), HttpStatus.OK);
     }
 
     @GetMapping("/dashboard/times-mensal")
@@ -679,7 +683,9 @@ public class VendaController {
             @RequestParam(required = false) List<String> filiais,
             @RequestParam(required = false) List<String> vendedores,
             @RequestParam(required = false) List<String> grupos,
-            @RequestParam(required = false) List<String> produtos
+            @RequestParam(required = false) List<String> produtos,
+            @RequestParam(required = false) Boolean closing,
+            @RequestParam(required = false) Boolean ganho
     ) {
         if (inicio == null) inicio = LocalDate.of(2000, 1, 1);
         if (fim == null) fim = LocalDate.now().plusYears(100);
@@ -690,14 +696,14 @@ public class VendaController {
         if (grupos != null && grupos.isEmpty()) grupos = null;
         if (produtos != null && produtos.isEmpty()) produtos = null;
 
-        List<java.util.Map<String, Object>> mensal = vendaRepository.findVendasPorMes(inicio, fim, filiais, vendedores, grupos, produtos);
+        List<java.util.Map<String, Object>> mensal = vendaRepository.findVendasPorMes(inicio, fim, filiais, vendedores, grupos, produtos, closing, ganho);
         
         double total = mensal.stream()
             .mapToDouble(row -> ((Number) row.get("total")).doubleValue())
             .sum();
         
-        long count = vendaRepository.countVendasFiltradas(inicio, fim, filiais, vendedores, grupos, produtos);
-        long vendasComGanho = vendaRepository.countVendasComGanhoFiltradas(inicio, fim, filiais, vendedores, grupos, produtos);
+        long count = vendaRepository.countVendasFiltradas(inicio, fim, filiais, vendedores, grupos, produtos, closing, ganho);
+        long vendasComGanho = vendaRepository.countVendasComGanhoFiltradas(inicio, fim, filiais, vendedores, grupos, produtos, closing);
         
         double ticketMedio = count > 0 ? total / count : 0;
         

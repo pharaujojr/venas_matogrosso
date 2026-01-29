@@ -79,14 +79,25 @@ public class VendaRepositoryImpl implements VendaRepositoryCustom {
             List<String> times,
             List<String> vendedores,
             List<String> grupos,
-            List<String> produtos) {
+            List<String> produtos,
+            Boolean closing,
+            Boolean ganho) {
         
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT TO_CHAR(v.data, 'YYYY-MM') as mes, ");
         sql.append("SUM(COALESCE(v.valor_debito, 0)) as total ");
         sql.append("FROM financeiro_clientes v ");
         sql.append("WHERE v.data BETWEEN :dataInicio AND :dataFim ");
-        sql.append("AND v.ganho = true ");
+        
+        if (ganho != null) {
+            sql.append("AND v.ganho = :ganho ");
+        } else {
+            sql.append("AND v.ganho = true ");
+        }
+        
+        if (closing != null) {
+            sql.append("AND v.closing = :closing ");
+        }
         
         if (times != null && !times.isEmpty()) {
             sql.append("AND v.filial IN (:times) ");
@@ -101,6 +112,9 @@ public class VendaRepositoryImpl implements VendaRepositoryCustom {
         var query = entityManager.createNativeQuery(sql.toString());
         query.setParameter("dataInicio", dataInicio);
         query.setParameter("dataFim", dataFim);
+        
+        if (ganho != null) query.setParameter("ganho", ganho);
+        if (closing != null) query.setParameter("closing", closing);
         
         if (times != null && !times.isEmpty()) query.setParameter("times", times);
         if (vendedores != null && !vendedores.isEmpty()) query.setParameter("vendedores", vendedores);
@@ -123,12 +137,23 @@ public class VendaRepositoryImpl implements VendaRepositoryCustom {
             List<String> times,
             List<String> vendedores,
             List<String> grupos,
-            List<String> produtos) {
+            List<String> produtos,
+            Boolean closing,
+            Boolean ganho) {
         
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT COUNT(v.id) FROM financeiro_clientes v ");
         sql.append("WHERE v.data BETWEEN :dataInicio AND :dataFim ");
-        sql.append("AND v.ganho = true ");
+        
+        if (ganho != null) {
+            sql.append("AND v.ganho = :ganho ");
+        } else {
+            sql.append("AND v.ganho = true ");
+        }
+        
+        if (closing != null) {
+            sql.append("AND v.closing = :closing ");
+        }
         
         if (times != null && !times.isEmpty()) {
             sql.append("AND v.filial IN (:times) ");
@@ -140,6 +165,9 @@ public class VendaRepositoryImpl implements VendaRepositoryCustom {
         var query = entityManager.createNativeQuery(sql.toString());
         query.setParameter("dataInicio", dataInicio);
         query.setParameter("dataFim", dataFim);
+        
+        if (ganho != null) query.setParameter("ganho", ganho);
+        if (closing != null) query.setParameter("closing", closing);
         
         if (times != null && !times.isEmpty()) query.setParameter("times", times);
         if (vendedores != null && !vendedores.isEmpty()) query.setParameter("vendedores", vendedores);
@@ -154,12 +182,17 @@ public class VendaRepositoryImpl implements VendaRepositoryCustom {
             List<String> times,
             List<String> vendedores,
             List<String> grupos,
-            List<String> produtos) {
+            List<String> produtos,
+            Boolean closing) {
         
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT COUNT(v.id) FROM financeiro_clientes v ");
         sql.append("WHERE v.data BETWEEN :dataInicio AND :dataFim ");
         sql.append("AND v.ganho = true ");
+        
+        if (closing != null) {
+            sql.append("AND v.closing = :closing ");
+        }
         
         if (times != null && !times.isEmpty()) {
             sql.append("AND v.filial IN (:times) ");
@@ -171,6 +204,8 @@ public class VendaRepositoryImpl implements VendaRepositoryCustom {
         var query = entityManager.createNativeQuery(sql.toString());
         query.setParameter("dataInicio", dataInicio);
         query.setParameter("dataFim", dataFim);
+        
+        if (closing != null) query.setParameter("closing", closing);
         
         if (times != null && !times.isEmpty()) query.setParameter("times", times);
         if (vendedores != null && !vendedores.isEmpty()) query.setParameter("vendedores", vendedores);
@@ -185,14 +220,25 @@ public class VendaRepositoryImpl implements VendaRepositoryCustom {
             List<String> times,
             List<String> vendedores,
             List<String> grupos,
-            List<String> produtos) {
+            List<String> produtos,
+            Boolean closing,
+            Boolean ganho) {
         
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT v.vendedor, ");
         sql.append("SUM(COALESCE(v.valor_debito, 0)) as total ");
         sql.append("FROM financeiro_clientes v ");
         sql.append("WHERE v.data BETWEEN :dataInicio AND :dataFim ");
-        sql.append("AND v.ganho = true ");
+        
+        if (ganho != null) {
+            sql.append("AND v.ganho = :ganho ");
+        } else {
+            sql.append("AND v.ganho = true ");
+        }
+        
+        if (closing != null) {
+            sql.append("AND v.closing = :closing ");
+        }
         
         if (times != null && !times.isEmpty()) {
             sql.append("AND v.filial IN (:times) ");
@@ -207,6 +253,9 @@ public class VendaRepositoryImpl implements VendaRepositoryCustom {
         var query = entityManager.createNativeQuery(sql.toString());
         query.setParameter("dataInicio", dataInicio);
         query.setParameter("dataFim", dataFim);
+        
+        if (ganho != null) query.setParameter("ganho", ganho);
+        if (closing != null) query.setParameter("closing", closing);
         
         if (times != null && !times.isEmpty()) query.setParameter("times", times);
         if (vendedores != null && !vendedores.isEmpty()) query.setParameter("vendedores", vendedores);
