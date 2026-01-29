@@ -315,6 +315,30 @@
         @media (max-width: 768px) {
             .cadastros-grid { grid-template-columns: 1fr; }
         }
+
+        /* Responsive Grid for Closing Day */
+        .dash-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 20px;
+        }
+        
+        /* Fix for grid items overflowing */
+        .dash-grid > * {
+            min-width: 0;
+        }
+        
+        .gauges-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Default 2 columns */
+            gap: 15px; 
+            padding: 20px;
+        }
+        
+        @media (max-width: 550px) {
+             .gauges-grid { grid-template-columns: 1fr; }
+        }
+
         .cadastro-panel {
             background: var(--card-bg);
             padding: 20px;
@@ -803,14 +827,14 @@
                 </div>
             </div>
 
-            <div class="cadastros-grid">
+            <div class="dash-grid">
                 <!-- 4 Gauges por Filial -->
                 <div class="cadastro-panel">
                     <div class="cadastro-header" style="position: relative;">
                         <h3 style="margin:0">Metas por Filial</h3>
                         <button onclick="openMetasModal()" style="background: none; border: none; color: var(--accent); cursor: pointer; font-size: 1.2em; padding: 5px; transition: color 0.2s;" title="Configurar Metas">⚙️</button>
                     </div>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 20px;">
+                    <div class="gauges-grid">
                         <div style="text-align: center;">
                             <div style="height: 140px; position: relative;">
                                 <canvas id="gaugeFilial1"></canvas>
@@ -846,6 +870,11 @@
                 <div class="cadastro-panel">
                     <div class="cadastro-header">
                         <h3 style="margin:0">Top Vendedores - Closing Day</h3>
+                        <div id="closingVendedoresPagination" style="display:none; gap:10px; align-items: center;">
+                            <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8em;" onclick="prevPageClosingVendedores()">&lt;</button>
+                            <span id="closingVendedoresPageInfo" style="font-size:0.8em; color:var(--accent);"></span>
+                            <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8em;" onclick="nextPageClosingVendedores()">&gt;</button>
+                        </div>
                     </div>
                     <div style="height: 350px; position: relative; padding: 10px;">
                         <canvas id="chartClosingVendedores"></canvas>
@@ -3837,9 +3866,34 @@
             });
         }
         
+        let _CLOSING_VENDEDORES_DATA = [];
+        let _CLOSING_VENDEDORES_PAGE = 0;
+        const _CLOSING_VENDEDORES_PAGE_SIZE = 15;
+
         function renderChartClosingVendedores(data) {
-            const labels = data.map(d => d.vendedor);
-            const values = data.map(d => d.total);
+            if (data) {
+                _CLOSING_VENDEDORES_DATA = data;
+                _CLOSING_VENDEDORES_PAGE = 0;
+            }
+
+            const total = _CLOSING_VENDEDORES_DATA.length;
+            const start = _CLOSING_VENDEDORES_PAGE * _CLOSING_VENDEDORES_PAGE_SIZE;
+            const end = start + _CLOSING_VENDEDORES_PAGE_SIZE;
+            const pageData = _CLOSING_VENDEDORES_DATA.slice(start, end);
+
+            // Update UI Pagination Controls
+            const pageContainer = document.getElementById('closingVendedoresPagination');
+            const pageInfo = document.getElementById('closingVendedoresPageInfo');
+            
+            if (total > _CLOSING_VENDEDORES_PAGE_SIZE) {
+                pageContainer.style.display = 'flex';
+                pageInfo.innerText = `${start + 1}-${Math.min(end, total)} de ${total}`;
+            } else {
+                pageContainer.style.display = 'none';
+            }
+
+            const labels = pageData.map(d => d.vendedor);
+            const values = pageData.map(d => d.total);
             
             const ctx = document.getElementById('chartClosingVendedores').getContext('2d');
             if (chartClosingVendedoresInstance) chartClosingVendedoresInstance.destroy();
@@ -3924,6 +3978,21 @@
                     }
                 }]
             });
+        }
+
+        function prevPageClosingVendedores() {
+            if (_CLOSING_VENDEDORES_PAGE > 0) {
+                _CLOSING_VENDEDORES_PAGE--;
+                renderChartClosingVendedores();
+            }
+        }
+
+        function nextPageClosingVendedores() {
+            const maxPage = Math.ceil(_CLOSING_VENDEDORES_DATA.length / _CLOSING_VENDEDORES_PAGE_SIZE) - 1;
+            if (_CLOSING_VENDEDORES_PAGE < maxPage) {
+                _CLOSING_VENDEDORES_PAGE++;
+                renderChartClosingVendedores();
+            }
         }
         
         async function openMetasModal() {
