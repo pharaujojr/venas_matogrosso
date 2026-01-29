@@ -764,6 +764,24 @@
                         <label>Até:</label>
                         <input type="date" id="closingDataFim" onchange="loadClosingDayDashboard()">
                     </div>
+                    <div class="form-group" style="margin:0; min-width: 180px;">
+                        <label>Filiais (Top Vendedores):</label>
+                        <div class="multiselect" id="msClosingFiliais">
+                            <div class="multiselect-head" onclick="toggleMs('msClosingFiliaisBody')">Todos</div>
+                            <div class="multiselect-body" id="msClosingFiliaisBody">
+                                <input type="text" class="ms-search" placeholder="Buscar..." onkeyup="filterMs('msClosingFiliaisBody', this.value)" onclick="event.stopPropagation()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin:0; min-width: 180px;">
+                        <label>Vendedores (Top Vendedores):</label>
+                        <div class="multiselect" id="msClosingVendedores">
+                            <div class="multiselect-head" onclick="toggleMs('msClosingVendedoresBody')">Todos</div>
+                            <div class="multiselect-body" id="msClosingVendedoresBody">
+                                <input type="text" class="ms-search" placeholder="Buscar..." onkeyup="filterMs('msClosingVendedoresBody', this.value)" onclick="event.stopPropagation()">
+                            </div>
+                        </div>
+                    </div>
                     <button class="btn btn-secondary" onclick="clearClosingFilters()" style="margin-bottom: 2px;">Limpar</button>
                     <div style="margin-left: auto; display: flex; gap: 30px; text-align: right;">
                         <div>
@@ -827,29 +845,9 @@
                 <!-- Top Vendedores com Filtros -->
                 <div class="cadastro-panel">
                     <div class="cadastro-header">
-                        <h3 style="margin:0 0 10px 0">🏆 Top Vendedores - Closing Day</h3>
+                        <h3 style="margin:0">🏆 Top Vendedores - Closing Day</h3>
                     </div>
-                    <div style="display: flex; gap: 10px; padding: 0 15px 10px 15px; flex-wrap: wrap;">
-                        <div class="form-group" style="margin:0; min-width: 160px; flex: 1;">
-                            <label style="font-size: 0.85em;">Filiais:</label>
-                            <div class="multiselect" id="msClosingFiliais">
-                                <div class="multiselect-head" onclick="toggleMs('msClosingFiliaisBody')">Todos</div>
-                                <div class="multiselect-body" id="msClosingFiliaisBody">
-                                    <input type="text" class="ms-search" placeholder="Buscar..." onkeyup="filterMs('msClosingFiliaisBody', this.value)" onclick="event.stopPropagation()">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group" style="margin:0; min-width: 160px; flex: 1;">
-                            <label style="font-size: 0.85em;">Vendedores:</label>
-                            <div class="multiselect" id="msClosingVendedores">
-                                <div class="multiselect-head" onclick="toggleMs('msClosingVendedoresBody')">Todos</div>
-                                <div class="multiselect-body" id="msClosingVendedoresBody">
-                                    <input type="text" class="ms-search" placeholder="Buscar..." onkeyup="filterMs('msClosingVendedoresBody', this.value)" onclick="event.stopPropagation()">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="height: 300px; position: relative; padding: 10px;">
+                    <div style="height: 350px; position: relative; padding: 10px;">
                         <canvas id="chartClosingVendedores"></canvas>
                     </div>
                 </div>
@@ -3658,11 +3656,17 @@
         
         function renderClosingGaugesByFilial(timeStats) {
             // timeStats é array de [filialNome, total]
-            const filiais = timeStats.slice(0, 4); // Pega no máximo 4 filiais
+            // Converte para map para fácil acesso
+            const timeStatsMap = {};
+            timeStats.forEach(stat => {
+                timeStatsMap[stat[0]] = stat[1];
+            });
             
-            filiais.forEach((filial, index) => {
-                const filialNome = filial[0];
-                const realizado = filial[1];
+            // Sempre usa as 4 primeiras filiais disponíveis
+            const filiaisParaExibir = closingFiliaisDisponiveis.slice(0, 4);
+            
+            filiaisParaExibir.forEach((filialNome, index) => {
+                const realizado = timeStatsMap[filialNome] || 0;
                 const meta = closingDayMetas[filialNome] || 0;
                 
                 // Atualiza nome e meta
@@ -3743,8 +3747,8 @@
                 });
             });
             
-            // Limpa gauges não usados
-            for (let i = filiais.length; i < 4; i++) {
+            // Limpa gauges não usados (caso tenha menos de 4 filiais)
+            for (let i = filiaisParaExibir.length; i < 4; i++) {
                 document.getElementById(`filial${i + 1}Name`).innerText = '-';
                 document.getElementById(`filial${i + 1}Meta`).innerText = 'Meta: R$ 0,00';
                 if (gaugeFilialInstances[i]) {
