@@ -766,7 +766,10 @@
                     </div>
                 </div>
                 <div class="cadastro-panel">
-                    <h3 style="margin:0 0 15px 0;">Vendas por Filial</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin:0;">Vendas por Filial</h3>
+                        <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8rem;" onclick="debugVendasFilial()">Debug</button>
+                    </div>
                     <div style="height: 350px; position: relative;">
                         <canvas id="chartTimesPie"></canvas>
                     </div>
@@ -2831,7 +2834,7 @@
                 return `${year}-${month}-${day}`;
             };
             
-            // For teams chart, use selected date filters
+            // For teams chart, use selected date filters AND all other filters to match Total
             const inicio = document.getElementById('dashDataInicio').value;
             const fim = document.getElementById('dashDataFim').value;
             
@@ -2839,6 +2842,28 @@
             const params = [];
             if (inicio) params.push(`inicio=${inicio}`);
             if (fim) params.push(`fim=${fim}`);
+            
+            // Add Global Filters to Times Chart too
+            const selectedFiliais = getCheckedValues('msFiliaisGlobalBody');
+            if (selectedFiliais.length > 0) {
+                selectedFiliais.forEach(f => params.push(`filiais=${encodeURIComponent(f)}`));
+            }
+
+            const selectedVens = getCheckedValues('msVensGlobalBody');
+            if (selectedVens.length > 0) {
+                selectedVens.forEach(v => params.push(`vendedores=${encodeURIComponent(v)}`));
+            }
+            
+            const selectedGroups = getCheckedValues('msGruposBody');
+            if (selectedGroups.length > 0) {
+                selectedGroups.forEach(g => params.push(`grupos=${encodeURIComponent(g)}`));
+            }
+            
+            const selectedProds = getCheckedValues('msProdsBody');
+            if (selectedProds.length > 0) {
+                selectedProds.forEach(p => params.push(`produtos=${encodeURIComponent(p)}`));
+            }
+            
             if (params.length > 0) queryString = '?' + params.join('&');
 
             try {
@@ -4107,7 +4132,46 @@
             }
         }
         
+        
+        function closeDebugModal() {
+            document.getElementById('debugModal').style.display = 'none';
+        }
+
+        async function debugVendasFilial() {
+            const inicio = document.getElementById('dashDataInicio').value;
+            const fim = document.getElementById('dashDataFim').value;
+            
+            const filiais = Array.from(document.querySelectorAll('#msFiliaisGlobalBody input:checked')).map(cb => cb.value);
+            const vendedores = Array.from(document.querySelectorAll('#msVensGlobalBody input:checked')).map(cb => cb.value);
+            const grupos = Array.from(document.querySelectorAll('#msGruposBody input:checked')).map(cb => cb.value);
+            const produtos = Array.from(document.querySelectorAll('#msProdsBody input:checked')).map(cb => cb.value);
+            
+            const chkClosingEl = document.getElementById('chkClosing');
+            const closing = chkClosingEl ? (chkClosingEl.checked ? true : null) : null;
+            
+            const params = new URLSearchParams();
+            if(inicio) params.append('inicio', inicio);
+            if(fim) params.append('fim', fim);
+            filiais.forEach(f => params.append('filiais', f));
+            vendedores.forEach(v => params.append('vendedores', v));
+            grupos.forEach(g => params.append('grupos', g));
+            produtos.forEach(p => params.append('produtos', p));
+            if(closing !== null) params.append('closing', closing);
+            
+            // Redirect to download
+            window.location.href = `/api/vendas/dashboard/export-excel?${params.toString()}`;
+        }
         // ==================== END CLOSING DAY FUNCTIONS ====================
     </script>
+<div id="debugModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; padding: 20px;">
+    <div style="background: white; width: 90%; height: 90%; margin: 0 auto; padding: 20px; border-radius: 8px; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <h3>Debug Vendas - Detalhes</h3>
+            <button class="btn btn-danger" onclick="closeDebugModal()">Fechar</button>
+        </div>
+        <div id="debugSummary" style="font-weight: bold; margin-bottom: 10px; color: blue;"></div>
+        <textarea id="debugContent" style="width: 100%; flex: 1; font-family: monospace; white-space: pre; overflow: auto;"></textarea>
+    </div>
+</div>
 </body>
 </html>

@@ -622,12 +622,23 @@ public class VendaController {
     public ResponseEntity<List<Object[]>> getDashboardTimes(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim,
+            @RequestParam(required = false) List<String> filiais,
+            @RequestParam(required = false) List<String> vendedores,
+            @RequestParam(required = false) List<String> grupos,
+            @RequestParam(required = false) List<String> produtos,
             @RequestParam(required = false) Boolean closing,
             @RequestParam(required = false) Boolean ganho
     ) {
         if (inicio == null) inicio = LocalDate.of(2000, 1, 1);
         if (fim == null) fim = LocalDate.now().plusYears(100);
-        return new ResponseEntity<>(vendaRepository.findVendasPorTime(inicio, fim, closing, ganho), HttpStatus.OK);
+        
+        // Handle empty lists
+        if (filiais != null && filiais.isEmpty()) filiais = null;
+        if (vendedores != null && vendedores.isEmpty()) vendedores = null;
+        if (grupos != null && grupos.isEmpty()) grupos = null;
+        if (produtos != null && produtos.isEmpty()) produtos = null;
+
+        return new ResponseEntity<>(vendaRepository.findVendasPorTimeDynamic(inicio, fim, filiais, vendedores, grupos, produtos, closing, ganho), HttpStatus.OK);
     }
 
     @GetMapping("/dashboard/times-mensal")
@@ -676,6 +687,29 @@ public class VendaController {
         }
     }
 
+    @GetMapping("/dashboard/detalhes")
+    public ResponseEntity<List<Venda>> getVendasDetalhadas(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim,
+            @RequestParam(required = false) List<String> filiais,
+            @RequestParam(required = false) List<String> vendedores,
+            @RequestParam(required = false) List<String> grupos,
+            @RequestParam(required = false) List<String> produtos,
+            @RequestParam(required = false) Boolean closing,
+            @RequestParam(required = false) Boolean ganho
+    ) {
+        if (inicio == null) inicio = LocalDate.of(2000, 1, 1);
+        if (fim == null) fim = LocalDate.now().plusYears(100);
+        
+        // Handle empty lists
+        if (filiais != null && filiais.isEmpty()) filiais = null;
+        if (vendedores != null && vendedores.isEmpty()) vendedores = null;
+        if (grupos != null && grupos.isEmpty()) grupos = null;
+        if (produtos != null && produtos.isEmpty()) produtos = null;
+
+        return new ResponseEntity<>(vendaRepository.findVendasDetalhadasDynamic(inicio, fim, filiais, vendedores, grupos, produtos, closing, ganho), HttpStatus.OK);
+    }
+
     @GetMapping("/dashboard/stats")
     public ResponseEntity<java.util.Map<String, Object>> getDashboardStats(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
@@ -714,6 +748,38 @@ public class VendaController {
         stats.put("vendasComGanho", vendasComGanho);
         
         return new ResponseEntity<>(stats, HttpStatus.OK);
+    }
+    @GetMapping("/dashboard/export-excel")
+    public ResponseEntity<org.springframework.core.io.InputStreamResource> exportVendasExcel(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim,
+            @RequestParam(required = false) List<String> filiais,
+            @RequestParam(required = false) List<String> vendedores,
+            @RequestParam(required = false) List<String> grupos,
+            @RequestParam(required = false) List<String> produtos,
+            @RequestParam(required = false) Boolean closing,
+            @RequestParam(required = false) Boolean ganho
+    ) {
+        if (inicio == null) inicio = LocalDate.of(2000, 1, 1);
+        if (fim == null) fim = LocalDate.now().plusYears(100);
+        
+        if (filiais != null && filiais.isEmpty()) filiais = null;
+        if (vendedores != null && vendedores.isEmpty()) vendedores = null;
+        if (grupos != null && grupos.isEmpty()) grupos = null;
+        if (produtos != null && produtos.isEmpty()) produtos = null;
+
+        List<Venda> vendas = vendaRepository.findVendasDetalhadasDynamic(inicio, fim, filiais, vendedores, grupos, produtos, closing, ganho);
+        
+        java.io.ByteArrayInputStream in = excelService.generateVendasExcel(vendas, grupos, produtos);
+        
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.add("Content-Disposition", "attachment; filename=vendas-debug.xlsx");
+        
+        return ResponseEntity
+                .ok()
+                .headers(headers)
+                .contentType(org.springframework.http.MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(new org.springframework.core.io.InputStreamResource(in));
     }
 }
 

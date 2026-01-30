@@ -516,4 +516,104 @@ public class ExcelService {
             throw new RuntimeException("Falha ao importar grupos: " + e.getMessage());
         }
     }
+
+    public java.io.ByteArrayInputStream generateVendasExcel(List<Venda> vendas, List<String> grupos, List<String> produtos) {
+        try (Workbook workbook = new XSSFWorkbook(); java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Vendas");
+            
+            // Build cache for product groups if filtering by group is needed
+            final java.util.Map<String, String> productGroupMap = new java.util.HashMap<>();
+            // Always fetch to show groups if possible, or just if filters are active. 
+            // For safety and correctness of calculation, we should fetch if groups filter is active.
+            if (grupos != null && !grupos.isEmpty()) {
+                List<ProdutoMatoGrosso> allProds = produtoMatoGrossoRepository.findAll();
+                for (ProdutoMatoGrosso p : allProds) {
+                    productGroupMap.put(p.getDescricao(), p.getGrupo());
+                }
+            }
+
+            // Header
+            Row headerRow = sheet.createRow(0);
+            String[] columns = {"ID", "DATA", "FILIAL", "VENDEDOR", "CLIENTE", "VALOR (BANCO)", "TOTAL (ITENS)", "FILTRADO (ITENS)", "PRODUTOS DETALHADOS"};
+            for (int i = 0; i < columns.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(columns[i]);
+                cell.setCellStyle(createBoldStyle(workbook));
+            }
+            
+            int rowIdx = 1;
+            for (Venda venda : vendas) {
+                Row row = sheet.createRow(rowIdx++);
+                
+                row.createCell(0).setCellValue(venda.getId() != null ? venda.getId() : 0);
+                row.createCell(1).setCellValue(venda.getData() != null ? venda.getData().toString() : "");
+                row.createCell(2).setCellValue(venda.getTime() != null ? venda.getTime() : "");
+                row.createCell(3).setCellValue(venda.getVendedor());
+                row.createCell(4).setCellValue(venda.getCliente());
+                
+                double valorBanco = venda.getValorVenda() != null ? venda.getValorVenda().doubleValue() : 0.0;
+                row.createCell(5).setCellValue(valorBanco);
+                
+                double totalItens = 0;
+                double totalFiltrado = 0;
+                StringBuilder prodDetails = new StringBuilder();
+                
+                if (venda.getProduto() != null) {
+                    for (VendaItem item : venda.getProduto()) {
+                        double valUnit = item.getValorUnitarioVenda() != null ? item.getValorUnitarioVenda().doubleValue() : 0.0;
+                        int qtd = item.getQuantidade() != null ? item.getQuantidade() : 0;
+                        double subtotal = valUnit * qtd;
+                        
+                        totalItens += subtotal;
+                        
+                        boolean matches = true;
+                        // Filter by Product Name
+                        if (produtos != null && !produtos.isEmpty()) {
+                            if (!produtos.contains(item.getNomeProduto())) matches = false;
+                        }
+                        
+                        // Filter by Group
+                        if (matches && grupos != null && !grupos.isEmpty()) {
+                             String grp = productGroupMap.get(item.getNomeProduto());
+                             // Handle "Não Especificado" logic
+                             boolean matchGroup = false;
+                             if (grp == null || grp.trim().isEmpty()) {
+                                 if (grupos.contains("Não Especificado")) matchGroup = true;
+                             } else {
+                                 if (grupos.contains(grp)) matchGroup = true;
+                             }
+                             if (!matchGroup) matches = false;
+                        }
+                        
+                        if (matches) {
+                            totalFiltrado += subtotal;
+                        }
+                        
+                        prodDetails.append(String.format("[%s x %s = %s] ", qtd, item.getNomeProduto(), subtotal));
+                    }
+                }
+                
+                row.createCell(6).setCellValue(totalItens);
+                row.createCell(7).setCellValue(totalFiltrado);
+                row.createCell(8).setCellValue(prodDetails.toString());
+            }
+            
+            for(int i=0; i<columns.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+            
+            workbook.write(out);
+            return new java.io.ByteArrayInputStream(out.toByteArray());
+        } catch (IOException e) {
+            throw new RuntimeException("fail to import data to Excel file: " + e.getMessage());
+        }
+    }
+    
+    private CellStyle createBoldStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setBold(true);
+        style.setFont(font);
+        return style;
+    }
 }

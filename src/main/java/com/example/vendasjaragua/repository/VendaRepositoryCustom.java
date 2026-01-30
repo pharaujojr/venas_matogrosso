@@ -41,4 +41,20 @@ public interface VendaRepositoryCustom {
                                                 List<String> produtos,
                                                 Boolean closing,
                                                 Boolean ganho);
+
+    List<Object[]> findVendasPorTimeDynamic(LocalDate inicio, LocalDate fim,
+                                            List<String> times, 
+                                            List<String> vendedores,
+                                            List<String> grupos,
+                                            List<String> produtos,
+                                            Boolean closing,
+                                            Boolean ganho);
+
+    List<com.example.vendasjaragua.model.Venda> findVendasDetalhadasDynamic(LocalDate inicio, LocalDate fim,
+                                            List<String> times, 
+                                            List<String> vendedores,
+                                            List<String> grupos,
+                                            List<String> produtos,
+                                            Boolean closing,
+                                            Boolean ganho);
 }
