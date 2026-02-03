@@ -151,4 +151,25 @@ public interface VendaRepository extends JpaRepository<Venda, Long>, VendaReposi
 
     @Query("SELECT v FROM Venda v")
     Page<Venda> findAllVendas(Pageable pageable);
+    
+    // Métodos para relatório andressa
+    List<Venda> findByDataBetween(LocalDate startDate, LocalDate endDate);
+    
+    List<Venda> findByDataBetweenAndVendedorObjIdIn(LocalDate startDate, LocalDate endDate, List<Long> vendedorIds);
+    
+    List<Venda> findByDataBetweenAndFilialIdIn(LocalDate startDate, LocalDate endDate, List<Long> filialIds);
+    
+    List<Venda> findByDataBetweenAndVendedorObjIdInAndFilialIdIn(LocalDate startDate, LocalDate endDate, List<Long> vendedorIds, List<Long> filialIds);
+    
+    // Métodos que filtram por time (String) - coluna 'filial' no banco
+    @Query("SELECT v FROM Venda v WHERE v.data BETWEEN :startDate AND :endDate AND v.time IN :times")
+    List<Venda> findByDataBetweenAndTimeIn(@Param("startDate") LocalDate startDate, 
+                                            @Param("endDate") LocalDate endDate, 
+                                            @Param("times") List<String> times);
+    
+    @Query("SELECT v FROM Venda v WHERE v.data BETWEEN :startDate AND :endDate AND v.vendedorObj.id IN :vendedorIds AND v.time IN :times")
+    List<Venda> findByDataBetweenAndVendedorObjIdInAndTimeIn(@Param("startDate") LocalDate startDate, 
+                                                               @Param("endDate") LocalDate endDate, 
+                                                               @Param("vendedorIds") List<Long> vendedorIds, 
+                                                               @Param("times") List<String> times);
 }

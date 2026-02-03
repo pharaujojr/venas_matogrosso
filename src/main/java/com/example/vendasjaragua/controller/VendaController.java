@@ -26,6 +26,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -780,6 +781,121 @@ public class VendaController {
                 .headers(headers)
                 .contentType(org.springframework.http.MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(new org.springframework.core.io.InputStreamResource(in));
+    }
+    
+    // Endpoints para relatório de vendas (andressa)
+    @GetMapping("/relatorio")
+    public ResponseEntity<List<java.util.Map<String, Object>>> getRelatorioVendas(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) List<Long> vendedores,
+            @RequestParam(required = false) List<String> filiais
+    ) {
+        try {
+            System.out.println("[DEBUG BACKEND] Recebendo requisição /api/vendas/relatorio");
+            System.out.println("[DEBUG BACKEND] startDate: " + startDate);
+            System.out.println("[DEBUG BACKEND] endDate: " + endDate);
+            System.out.println("[DEBUG BACKEND] vendedores: " + vendedores);
+            System.out.println("[DEBUG BACKEND] filiais: " + filiais);
+            
+            List<Venda> vendas;
+            
+            if ((vendedores == null || vendedores.isEmpty()) && (filiais == null || filiais.isEmpty())) {
+                // Sem filtros de vendedor ou filial
+                System.out.println("[DEBUG BACKEND] Consultando SEM filtros");
+                vendas = vendaRepository.findByDataBetween(startDate, endDate);
+                
+                // Debug: Ver filiais disponíveis
+                if (vendas != null && !vendas.isEmpty()) {
+                    System.out.println("[DEBUG BACKEND] Filiais nas vendas (primeiras 5):");
+                    vendas.stream().limit(5).forEach(v -> 
+                        System.out.println("  - Venda ID: " + v.getId() + 
+                            ", Filial: " + (v.getFilial() != null ? v.getFilial().getId() + " - " + v.getFilial().getNome() : "NULL") +
+                            ", Time: " + v.getTime())
+                    );
+                }
+            } else if (vendedores != null && !vendedores.isEmpty() && (filiais == null || filiais.isEmpty())) {
+                // Apenas filtro de vendedor
+                System.out.println("[DEBUG BACKEND] Consultando APENAS com filtro de vendedor");
+                vendas = vendaRepository.findByDataBetweenAndVendedorObjIdIn(startDate, endDate, vendedores);
+            } else if ((vendedores == null || vendedores.isEmpty()) && filiais != null && !filiais.isEmpty()) {
+                // Apenas filtro de filial (por nome/time)
+                System.out.println("[DEBUG BACKEND] Consultando APENAS com filtro de filial: " + filiais);
+                vendas = vendaRepository.findByDataBetweenAndTimeIn(startDate, endDate, filiais);
+            } else {
+                // Ambos os filtros
+                System.out.println("[DEBUG BACKEND] Consultando com AMBOS os filtros");
+                vendas = vendaRepository.findByDataBetweenAndVendedorObjIdInAndTimeIn(startDate, endDate, vendedores, filiais);
+            }
+            
+            System.out.println("[DEBUG BACKEND] Total de vendas encontradas: " + (vendas != null ? vendas.size() : 0));
+            
+            // Debug: Verificar filiais nas vendas
+            if (vendas != null && !vendas.isEmpty()) {
+                System.out.println("[DEBUG BACKEND] Amostra de vendas:");
+                vendas.stream().limit(3).forEach(v -> 
+                    System.out.println("  - ID: " + v.getId() + 
+                        ", Filial: " + (v.getFilial() != null ? v.getFilial().getId() + " - " + v.getFilial().getNome() : "NULL") +
+                        ", Time: " + v.getTime())
+                );
+            }
+            
+            List<java.util.Map<String, Object>> resultado = new java.util.ArrayList<>();
+            for (Venda v : vendas) {
+                java.util.Map<String, Object> item = new java.util.HashMap<>();
+                item.put("id", v.getId());
+                item.put("data", v.getData());
+                item.put("cliente", v.getCliente() != null ? v.getCliente() : "N/A");
+                item.put("vendedor", v.getVendedorObj() != null ? v.getVendedorObj().getNome() : (v.getVendedor() != null ? v.getVendedor() : "N/A"));
+                item.put("filial", v.getFilial() != null ? v.getFilial().getNome() : (v.getTime() != null ? v.getTime() : "N/A"));
+                item.put("valor", v.getValorVenda() != null ? v.getValorVenda() : BigDecimal.ZERO);
+                item.put("ganho", v.getGanho() != null ? v.getGanho() : false);
+                resultado.add(item);
+            }
+            
+            return ResponseEntity.ok(resultado);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    @GetMapping("/relatorio/excel")
+    public ResponseEntity<org.springframework.core.io.InputStreamResource> exportRelatorioExcel(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) List<Long> vendedores,
+            @RequestParam(required = false) List<String> filiais
+    ) {
+        try {
+            List<Venda> vendas;
+            
+            if ((vendedores == null || vendedores.isEmpty()) && (filiais == null || filiais.isEmpty())) {
+                vendas = vendaRepository.findByDataBetween(startDate, endDate);
+            } else if (vendedores != null && !vendedores.isEmpty() && (filiais == null || filiais.isEmpty())) {
+                vendas = vendaRepository.findByDataBetweenAndVendedorObjIdIn(startDate, endDate, vendedores);
+            } else if ((vendedores == null || vendedores.isEmpty()) && filiais != null && !filiais.isEmpty()) {
+                vendas = vendaRepository.findByDataBetweenAndTimeIn(startDate, endDate, filiais);
+            } else {
+                vendas = vendaRepository.findByDataBetweenAndVendedorObjIdInAndTimeIn(startDate, endDate, vendedores, filiais);
+            }
+            
+            java.io.ByteArrayInputStream in = excelService.generateRelatorioExcel(vendas);
+            
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            String filename = String.format("relatorio-vendas-%s-a-%s.xlsx", 
+                startDate.toString(), endDate.toString());
+            headers.add("Content-Disposition", "attachment; filename=" + filename);
+            
+            return ResponseEntity
+                    .ok()
+                    .headers(headers)
+                    .contentType(org.springframework.http.MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(new org.springframework.core.io.InputStreamResource(in));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }
 

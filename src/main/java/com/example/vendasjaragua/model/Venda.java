@@ -36,6 +36,10 @@ public class Venda {
     private String estado; // Estado (UF) do cliente
     
     private String vendedor;
+    
+    @ManyToOne
+    @JoinColumn(name = "vendedor_id")
+    private Vendedor vendedorObj;
 
     private LocalDate data; // Data da venda/cadastro
 
@@ -61,6 +65,10 @@ public class Venda {
 
     @Column(name = "filial")
     private String time; // Mapeia para 'filial' (substitui time)
+    
+    @ManyToOne
+    @JoinColumn(name = "filial_id")
+    private Filial filial;
     
     // Novos campos da tabela financeiro_clientes
     private String email;

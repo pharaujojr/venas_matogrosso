@@ -616,4 +616,139 @@ public class ExcelService {
         style.setFont(font);
         return style;
     }
+    
+    public java.io.ByteArrayInputStream generateRelatorioExcel(List<Venda> vendas) {
+        try (Workbook workbook = new XSSFWorkbook(); java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Relatório de Vendas");
+            
+            // Criar estilo para o cabeçalho
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setColor(IndexedColors.WHITE.getIndex());
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setBorderBottom(BorderStyle.THIN);
+            headerStyle.setBorderTop(BorderStyle.THIN);
+            headerStyle.setBorderLeft(BorderStyle.THIN);
+            headerStyle.setBorderRight(BorderStyle.THIN);
+            
+            // Criar estilo para datas
+            CellStyle dateStyle = workbook.createCellStyle();
+            CreationHelper createHelper = workbook.getCreationHelper();
+            dateStyle.setDataFormat(createHelper.createDataFormat().getFormat("dd/mm/yyyy"));
+            
+            // Criar estilo para valores monetários
+            CellStyle currencyStyle = workbook.createCellStyle();
+            currencyStyle.setDataFormat(createHelper.createDataFormat().getFormat("R$ #,##0.00"));
+            
+            // Criar cabeçalho
+            Row headerRow = sheet.createRow(0);
+            String[] columns = {"Data", "Cliente", "Vendedor", "Filial", "Valor da Venda", "Ganho"};
+            
+            for (int i = 0; i < columns.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(columns[i]);
+                cell.setCellStyle(headerStyle);
+            }
+            
+            // Preencher dados
+            int rowIdx = 1;
+            for (Venda venda : vendas) {
+                Row row = sheet.createRow(rowIdx++);
+                
+                // Data
+                Cell dateCell = row.createCell(0);
+                if (venda.getData() != null) {
+                    dateCell.setCellValue(java.util.Date.from(venda.getData().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+                    dateCell.setCellStyle(dateStyle);
+                } else {
+                    dateCell.setCellValue("");
+                }
+                
+                // Cliente
+                row.createCell(1).setCellValue(venda.getCliente() != null ? venda.getCliente() : "");
+                
+                // Vendedor
+                row.createCell(2).setCellValue(venda.getVendedorObj() != null ? venda.getVendedorObj().getNome() : (venda.getVendedor() != null ? venda.getVendedor() : ""));
+                
+                // Unidade (Filial)
+                row.createCell(3).setCellValue(venda.getFilial() != null ? venda.getFilial().getNome() : (venda.getTime() != null ? venda.getTime() : ""));
+                
+                // Valor da Venda
+                Cell valorCell = row.createCell(4);
+                if (venda.getValorVenda() != null) {
+                    valorCell.setCellValue(venda.getValorVenda().doubleValue());
+                    valorCell.setCellStyle(currencyStyle);
+                } else {
+                    valorCell.setCellValue(0.0);
+                    valorCell.setCellStyle(currencyStyle);
+                }
+                
+                // Ganho
+                row.createCell(5).setCellValue(venda.getGanho() != null && venda.getGanho() ? "Sim" : "Não");
+            }
+            
+            // Criar tabela do Excel (ListObject)
+            if (rowIdx > 1) {
+                org.apache.poi.xssf.usermodel.XSSFSheet xssfSheet = (org.apache.poi.xssf.usermodel.XSSFSheet) sheet;
+                org.apache.poi.xssf.usermodel.XSSFTable table = xssfSheet.createTable(
+                    new org.apache.poi.ss.util.AreaReference(
+                        new org.apache.poi.ss.util.CellReference(0, 0),
+                        new org.apache.poi.ss.util.CellReference(rowIdx - 1, columns.length - 1),
+                        org.apache.poi.ss.SpreadsheetVersion.EXCEL2007
+                    )
+                );
+                
+                table.setName("TabelaVendas");
+                table.setDisplayName("TabelaVendas");
+                table.setStyleName("TableStyleMedium2");
+                
+                // Configurar auto-filtro
+                org.openxmlformats.schemas.spreadsheetml.x2006.main.CTTable ctTable = table.getCTTable();
+                ctTable.setTotalsRowShown(false);
+                
+                org.openxmlformats.schemas.spreadsheetml.x2006.main.CTAutoFilter autoFilter = ctTable.getAutoFilter();
+                if (autoFilter == null) {
+                    autoFilter = ctTable.addNewAutoFilter();
+                }
+                autoFilter.setRef(new org.apache.poi.ss.util.AreaReference(
+                    new org.apache.poi.ss.util.CellReference(0, 0),
+                    new org.apache.poi.ss.util.CellReference(rowIdx - 1, columns.length - 1),
+                    org.apache.poi.ss.SpreadsheetVersion.EXCEL2007
+                ).formatAsString());
+                
+                // Adicionar colunas à tabela
+                org.openxmlformats.schemas.spreadsheetml.x2006.main.CTTableColumns ctTableColumns = ctTable.getTableColumns();
+                if (ctTableColumns == null) {
+                    ctTableColumns = ctTable.addNewTableColumns();
+                }
+                ctTableColumns.setCount(columns.length);
+                
+                for (int i = 0; i < columns.length; i++) {
+                    org.openxmlformats.schemas.spreadsheetml.x2006.main.CTTableColumn column;
+                    if (i < ctTableColumns.sizeOfTableColumnArray()) {
+                        column = ctTableColumns.getTableColumnArray(i);
+                    } else {
+                        column = ctTableColumns.addNewTableColumn();
+                    }
+                    column.setId(i + 1);
+                    column.setName(columns[i]);
+                }
+            }
+            
+            // Auto-ajustar largura das colunas (após criar a tabela para melhor ajuste)
+            for (int i = 0; i < columns.length; i++) {
+                sheet.autoSizeColumn(i);
+                // Adicionar um pouco de espaço extra para garantir que o conteúdo caiba
+                sheet.setColumnWidth(i, sheet.getColumnWidth(i) + 512);
+            }
+            
+            workbook.write(out);
+            return new java.io.ByteArrayInputStream(out.toByteArray());
+        } catch (Exception e) {
+            throw new RuntimeException("Falha ao gerar Excel: " + e.getMessage(), e);
+        }
+    }
 }

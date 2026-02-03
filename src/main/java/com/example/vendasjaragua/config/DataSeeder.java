@@ -2,9 +2,11 @@ package com.example.vendasjaragua.config;
 
 import com.example.vendasjaragua.model.Produto;
 import com.example.vendasjaragua.model.Time;
+import com.example.vendasjaragua.model.Usuario;
 import com.example.vendasjaragua.model.Vendedor;
 import com.example.vendasjaragua.repository.ProdutoRepository;
 import com.example.vendasjaragua.repository.TimeRepository;
+import com.example.vendasjaragua.repository.UsuarioRepository;
 import com.example.vendasjaragua.repository.VendedorRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
@@ -20,10 +22,18 @@ public class DataSeeder {
     private final TimeRepository timeRepository;
     private final VendedorRepository vendedorRepository;
     private final ProdutoRepository produtoRepository;
+    private final UsuarioRepository usuarioRepository;
 
     @Bean
     public CommandLineRunner seedData() {
         return args -> {
+            // Seed usuarios
+            if (usuarioRepository.count() == 0) {
+                Usuario admin = new Usuario("solturi", "Solturi2025.", "admin");
+                Usuario andressa = new Usuario("andressa", "andressa", "vendas");
+                usuarioRepository.saveAll(Arrays.asList(admin, andressa));
+            }
+            
             // Ensure default product exists
             if (produtoRepository.findByDescricao("Não Especificado").isEmpty()) {
                 Produto p = new Produto();

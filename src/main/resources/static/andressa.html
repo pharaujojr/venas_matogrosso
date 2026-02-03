@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendas - Relatório</title>
+    <script>
+        // Verificar autenticação antes de carregar a página
+        (function() {
+            const SESSION_KEY = 'vmt_auth_token';
+            const EXPIRY_KEY = 'vmt_auth_expiry';
+            const ROLE_KEY = 'vmt_user_role';
+            
+            const token = localStorage.getItem(SESSION_KEY);
+            const expiry = localStorage.getItem(EXPIRY_KEY);
+            const role = localStorage.getItem(ROLE_KEY);
+            
+            // Se não tiver token, expirou, ou não for role vendas, redirecionar
+            if (!token || !expiry || new Date().getTime() > parseInt(expiry) || role !== 'vendas') {
+                localStorage.removeItem(SESSION_KEY);
+                localStorage.removeItem(EXPIRY_KEY);
+                localStorage.removeItem(ROLE_KEY);
+                localStorage.removeItem('vmt_username');
+                window.location.href = 'login.html';
+            }
+        })();
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600&display=swap');
+
+        :root {
+            --bg-color: #0d1b2a;
+            --card-bg: rgba(27, 38, 59, 0.95);
+            --primary: #415a77;
+            --accent: #778da9;
+            --text-light: #e0e1dd;
+            --microsoft-blue: #0078d4;
+            --microsoft-hover: #106ebe;
+            --border-color: rgba(255,255,255,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-light);
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 10px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            padding: 10px 20px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+
+        .filters-container {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background: rgba(13, 27, 42, 0.8);
+            color: var(--text-light);
+            font-size: 14px;
+        }
+
+        /* Multiselect customizado */
+        .multiselect-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .multiselect-head {
+            cursor: pointer;
+            padding: 10px;
+            background: rgba(13, 27, 42, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+            color: #fff;
+            min-height: 32px;
+        }
+        .multiselect-head:hover { background: rgba(255,255,255,0.1); }
+        .multiselect-head:after {
+            content: '▼';
+            font-size: 0.7em;
+            margin-left: 8px;
+            color: var(--accent);
+        }
+        .ms-search {
+            width: 100%;
+            padding: 8px;
+            background: rgba(0,0,0,0.3);
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            color: #fff;
+            font-size: 0.9em;
+            outline: none;
+        }
+        .multiselect-body {
+            display: none;
+            position: absolute;
+            top: 100%; left: 0; width: 100%;
+            background: #1b263b;
+            border: 1px solid var(--border-color);
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            padding: 5px;
+            border-radius: 4px;
+            margin-top: 2px;
+        }
+        .multiselect-body.show {
+            display: block;
+        }
+        .multiselect-item {
+            display: flex;
+            align-items: center;
+            padding: 5px;
+            cursor: pointer;
+            color: #e0e1dd;
+            border-radius: 3px;
+        }
+        .multiselect-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .multiselect-item input {
+            margin-right: 8px;
+            width: auto;
+        }
+
+        .buttons-row {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: rgba(0, 120, 212, 0.2);
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #95a5a6;
+        }
+
+        .ganho-sim {
+            color: #27ae60;
+            font-weight: 600;
+        }
+
+        .ganho-nao {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+
+        .total-row {
+            font-weight: 600;
+            background: rgba(0, 120, 212, 0.15);
+            font-size: 16px;
+        }
+
+        .total-row td {
+            border-top: 2px solid var(--microsoft-blue);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Relatório de Vendas</h1>
+        <button class="logout-btn" onclick="logout()">Sair</button>
+    </div>
+
+    <div class="filters-container">
+        <div class="filters-grid">
+            <div class="filter-group">
+                <label for="startDate">Data Início</label>
+                <input type="date" id="startDate">
+            </div>
+            <div class="filter-group">
+                <label for="endDate">Data Fim</label>
+                <input type="date" id="endDate">
+            </div>
+            <div class="filter-group">
+                <label for="filialFilter">Filiais</label>
+                <div class="multiselect-wrapper">
+                    <div class="multiselect-head" id="filialHead" onclick="toggleFilialDropdown()">
+                        <span id="filialSelected">Todas</span>
+                    </div>
+                    <div class="multiselect-body" id="filialBody">
+                        <input type="text" class="ms-search" placeholder="Buscar..." oninput="filterFiliais(this.value)">
+                        <div id="filialCheckboxes"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="buttons-row">
+            <button class="btn" onclick="exportToExcel()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Exportar Excel
+            </button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div id="loadingIndicator" class="loading" style="display: none;">
+            Carregando dados...
+        </div>
+        <div id="noDataIndicator" class="no-data" style="display: none;">
+            Nenhuma venda encontrada para os filtros selecionados.
+        </div>
+        <table id="vendasTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Cliente</th>
+                    <th>Vendedor</th>
+                    <th>Filial</th>
+                    <th>Valor da Venda</th>
+                    <th>Ganho</th>
+                </tr>
+            </thead>
+            <tbody id="vendasTableBody">
+            </tbody>
+            <tfoot id="vendasTableFooter">
+            </tfoot>
+        </table>
+    </div>
+
+    <script>
+        let filiais = [];
+        let selectedFiliais = [];
+
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Definir datas padrão (primeiro e último dia do mês atual)
+            const hoje = new Date();
+            const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+            const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+            
+            document.getElementById('startDate').valueAsDate = primeiroDia;
+            document.getElementById('endDate').valueAsDate = ultimoDia;
+
+            // Event listeners nos filtros de data
+            document.getElementById('startDate').addEventListener('change', debounce(loadVendas, 500));
+            document.getElementById('endDate').addEventListener('change', debounce(loadVendas, 500));
+
+            // Fechar dropdown ao clicar fora
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.multiselect-wrapper')) {
+                    document.querySelectorAll('.multiselect-body').forEach(body => {
+                        body.classList.remove('show');
+                    });
+                }
+            });
+
+            // Carregar filtros e depois carregar vendas automaticamente
+            loadFilters();
+        });
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        async function loadFilters() {
+            try {
+                // Carregar filiais
+                const filiaisRes = await fetch('/api/vendas/filiais');
+                filiais = await filiaisRes.json();
+                
+                const checkboxContainer = document.getElementById('filialCheckboxes');
+                checkboxContainer.innerHTML = '';
+                
+                filiais.forEach(f => {
+                    const item = document.createElement('div');
+                    item.className = 'multiselect-item';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = 'filial_' + f.id;
+                    checkbox.value = f.id;
+                    checkbox.dataset.nome = f.nome;
+                    checkbox.onchange = updateFilialSelection;
+                    
+                    const label = document.createElement('label');
+                    label.htmlFor = 'filial_' + f.id;
+                    label.style.cursor = 'pointer';
+                    label.style.flex = '1';
+                    label.textContent = f.nome;
+                    
+                    item.appendChild(checkbox);
+                    item.appendChild(label);
+                    checkboxContainer.appendChild(item);
+                });
+
+                // Carregar vendas automaticamente após carregar filtros
+                loadVendas();
+
+            } catch (error) {
+                console.error('Erro ao carregar filtros:', error);
+                alert('Erro ao carregar filtros. Por favor, recarregue a página.');
+            }
+        }
+
+        function toggleFilialDropdown() {
+            const body = document.getElementById('filialBody');
+            body.classList.toggle('show');
+        }
+
+        function filterFiliais(query) {
+            const items = document.querySelectorAll('#filialCheckboxes .multiselect-item');
+            const searchTerm = query.toLowerCase();
+            
+            items.forEach(item => {
+                const label = item.querySelector('label').textContent.toLowerCase();
+                item.style.display = label.includes(searchTerm) ? 'flex' : 'none';
+            });
+        }
+
+        function updateFilialSelection() {
+            selectedFiliais = [];
+            document.querySelectorAll('#filialCheckboxes input:checked').forEach(cb => {
+                selectedFiliais.push(cb.dataset.nome);
+            });
+
+            console.log('[DEBUG] Filiais selecionadas:', selectedFiliais);
+
+            const headSpan = document.getElementById('filialSelected');
+            if (selectedFiliais.length === 0) {
+                headSpan.textContent = 'Todas';
+            } else if (selectedFiliais.length === 1) {
+                headSpan.textContent = selectedFiliais[0];
+            } else {
+                headSpan.textContent = selectedFiliais.length + ' selecionadas';
+            }
+
+            // Recarregar vendas ao mudar selecao
+            loadVendas();
+        }
+
+        async function loadVendas() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            if (!startDate || !endDate) {
+                console.log('[DEBUG] Datas não preenchidas');
+                return;
+            }
+
+            console.log('[DEBUG] Carregando vendas com filtros:', {
+                startDate,
+                endDate,
+                filiais: selectedFiliais
+            });
+
+            document.getElementById('loadingIndicator').style.display = 'block';
+            document.getElementById('noDataIndicator').style.display = 'none';
+            document.getElementById('vendasTable').style.display = 'none';
+
+            try {
+                const params = new URLSearchParams({
+                    startDate: startDate,
+                    endDate: endDate
+                });
+                
+                selectedFiliais.forEach(id => params.append('filiais', id));
+
+                const url = '/api/vendas/relatorio?' + params;
+                console.log('[DEBUG] URL da requisicao:', url);
+
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error('Erro HTTP: ' + response.status);
+                }
+                
+                const vendas = await response.json();
+                console.log('[DEBUG] Vendas recebidas:', vendas.length, 'registros');
+                renderTable(vendas);
+            } catch (error) {
+                console.error('[ERROR] Erro ao carregar vendas:', error);
+                document.getElementById('loadingIndicator').style.display = 'none';
+                document.getElementById('noDataIndicator').style.display = 'block';
+                document.getElementById('noDataIndicator').textContent = 'Erro ao carregar dados. Tente novamente.';
+            } finally {
+                document.getElementById('loadingIndicator').style.display = 'none';
+            }
+        }
+
+        function renderTable(vendas) {
+            const tbody = document.getElementById('vendasTableBody');
+            const tfoot = document.getElementById('vendasTableFooter');
+            tbody.innerHTML = '';
+            tfoot.innerHTML = '';
+
+            if (vendas.length === 0) {
+                document.getElementById('noDataIndicator').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('vendasTable').style.display = 'table';
+
+            let totalValor = 0;
+
+            vendas.forEach(venda => {
+                const tr = document.createElement('tr');
+                
+                const dataBr = new Date(venda.data + 'T00:00:00').toLocaleDateString('pt-BR');
+                const valorFormatado = venda.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                const ganhoText = venda.ganho ? 'Sim' : 'Nao';
+                const ganhoClass = venda.ganho ? 'ganho-sim' : 'ganho-nao';
+
+                const td1 = document.createElement('td');
+                td1.textContent = dataBr;
+                const td2 = document.createElement('td');
+                td2.textContent = venda.cliente;
+                const td3 = document.createElement('td');
+                td3.textContent = venda.vendedor;
+                const td4 = document.createElement('td');
+                td4.textContent = venda.filial;
+                const td5 = document.createElement('td');
+                td5.textContent = valorFormatado;
+                const td6 = document.createElement('td');
+                td6.className = ganhoClass;
+                td6.textContent = ganhoText;
+                
+                tr.appendChild(td1);
+                tr.appendChild(td2);
+                tr.appendChild(td3);
+                tr.appendChild(td4);
+                tr.appendChild(td5);
+                tr.appendChild(td6);
+                tbody.appendChild(tr);
+
+                totalValor += venda.valor;
+            });
+
+            // Adicionar linha de total
+            const totalRow = document.createElement('tr');
+            totalRow.className = 'total-row';
+            
+            const tdTotal1 = document.createElement('td');
+            tdTotal1.colSpan = 4;
+            const strong1 = document.createElement('strong');
+            strong1.textContent = 'TOTAL (' + vendas.length + ' vendas)';
+            tdTotal1.appendChild(strong1);
+            
+            const tdTotal2 = document.createElement('td');
+            const strong2 = document.createElement('strong');
+            strong2.textContent = totalValor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            tdTotal2.appendChild(strong2);
+            
+            const tdTotal3 = document.createElement('td');
+            
+            totalRow.appendChild(tdTotal1);
+            totalRow.appendChild(tdTotal2);
+            totalRow.appendChild(tdTotal3);
+            tfoot.appendChild(totalRow);
+        }
+
+        function exportToExcel() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            if (!startDate || !endDate) {
+                alert('Por favor, selecione o período antes de exportar.');
+                return;
+            }
+
+            const params = new URLSearchParams({
+                startDate: startDate,
+                endDate: endDate
+            });
+            
+            selectedFiliais.forEach(id => params.append('filiais', id));
+
+            window.location.href = '/api/vendas/relatorio/excel?' + params;
+        }
+
+        function logout() {
+            localStorage.removeItem('vmt_auth_token');
+            localStorage.removeItem('vmt_auth_expiry');
+            localStorage.removeItem('vmt_user_role');
+            localStorage.removeItem('vmt_username');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

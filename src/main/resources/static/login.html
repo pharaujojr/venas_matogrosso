@@ -111,17 +111,22 @@
     </div>
 
     <script>
-        const VALID_USER = 'solturi';
-        const VALID_PASS = 'Solturi2025.';
         const SESSION_KEY = 'vmt_auth_token';
         const EXPIRY_KEY = 'vmt_auth_expiry';
+        const ROLE_KEY = 'vmt_user_role';
+        const USERNAME_KEY = 'vmt_username';
 
         // Verificar se já está logado
         if (isAuthenticated()) {
-            window.location.href = 'index.html';
+            const role = localStorage.getItem(ROLE_KEY);
+            if (role === 'vendas') {
+                window.location.href = 'andressa.html';
+            } else {
+                window.location.href = 'index.html';
+            }
         }
 
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const username = document.getElementById('username').value;
@@ -129,21 +134,44 @@
             const rememberMe = document.getElementById('rememberMe').checked;
             const errorMsg = document.getElementById('errorMessage');
 
-            if (username === VALID_USER && password === VALID_PASS) {
-                // Gerar token simples (hash baseado em timestamp + credenciais)
-                const token = btoa(username + ':' + new Date().getTime() + ':' + VALID_PASS.substring(0, 4));
-                
-                // Definir data de expiração (7 dias se "lembrar-me", 12 horas se não)
-                const expiryHours = rememberMe ? (7 * 24) : 12;
-                const expiryDate = new Date().getTime() + (expiryHours * 60 * 60 * 1000);
-                
-                localStorage.setItem(SESSION_KEY, token);
-                localStorage.setItem(EXPIRY_KEY, expiryDate.toString());
-                
-                window.location.href = 'index.html';
-            } else {
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Gerar token simples
+                    const token = btoa(username + ':' + new Date().getTime());
+                    
+                    // Definir data de expiração (7 dias se "lembrar-me", 12 horas se não)
+                    const expiryHours = rememberMe ? (7 * 24) : 12;
+                    const expiryDate = new Date().getTime() + (expiryHours * 60 * 60 * 1000);
+                    
+                    localStorage.setItem(SESSION_KEY, token);
+                    localStorage.setItem(EXPIRY_KEY, expiryDate.toString());
+                    localStorage.setItem(ROLE_KEY, data.role);
+                    localStorage.setItem(USERNAME_KEY, data.username);
+                    
+                    // Redirecionar baseado no role
+                    if (data.role === 'vendas') {
+                        window.location.href = 'andressa.html';
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                } else {
+                    errorMsg.style.display = 'block';
+                    document.getElementById('password').value = '';
+                }
+            } catch (error) {
+                console.error('Erro ao fazer login:', error);
+                errorMsg.textContent = 'Erro ao conectar ao servidor';
                 errorMsg.style.display = 'block';
-                document.getElementById('password').value = '';
             }
         });
 
@@ -157,6 +185,8 @@
             if (new Date().getTime() > parseInt(expiry)) {
                 localStorage.removeItem(SESSION_KEY);
                 localStorage.removeItem(EXPIRY_KEY);
+                localStorage.removeItem(ROLE_KEY);
+                localStorage.removeItem(USERNAME_KEY);
                 return false;
             }
             
