@@ -732,10 +732,23 @@
             <div class="cadastros-grid">
                 <div class="cadastro-panel">
                     <div class="cadastro-header">
-                        <h3 style="margin:0">Evolução Mensal de Vendas</h3>
+                        <h3 style="margin:0" id="chartMensalTitle">Meta Global</h3>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <button onclick="openMetasModal()" style="background: none; border: none; color: var(--accent); cursor: pointer; font-size: 1.2em; padding: 5px; transition: color 0.2s;" title="Configurar Metas">⚙️</button>
+                            <button class="btn btn-primary" style="padding: 8px 20px; font-size: 1.5em; font-weight: bold;" onclick="toggleChartMensal()" title="Alternar visualização">⇄</button>
+                        </div>
                     </div>
 
-                    <div style="height: 450px; position: relative;">
+                    <div id="gaugeMensalContainer" style="height: 450px; position: relative; display: flex; align-items: center; justify-content: center; padding: 20px;">
+                        <div style="width: 100%; max-width: 500px;">
+                            <canvas id="gaugeGlobal" style="max-height: 300px;"></canvas>
+                            <div style="text-align: center; margin-top: 20px;">
+                                <div id="metaGlobalValor" style="color: var(--accent); font-size: 0.95em; margin-bottom: 8px;">Meta: R$ 0,00</div>
+                                <div id="realizadoGlobalValor" style="color: var(--text-light); font-size: 1.2em; font-weight: 600;">Realizado: R$ 0,00</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="chartMensalContainer" style="height: 450px; position: relative; display: none;">
                         <canvas id="chartMensal"></canvas>
                     </div>
                 </div>
@@ -767,10 +780,46 @@
                 </div>
                 <div class="cadastro-panel">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h3 style="margin:0;">Vendas por Filial</h3>
-                        <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8rem;" onclick="debugVendasFilial()">Debug</button>
+                        <h3 style="margin:0;" id="chartFilialTitle">Metas por Filial</h3>
+                        <button class="btn btn-primary" style="padding: 8px 20px; font-size: 1.5em; font-weight: bold;" onclick="toggleChartFilial()" title="Alternar visualização">⇄</button>
                     </div>
-                    <div style="height: 350px; position: relative;">
+                    <div id="gaugeFilialContainer" style="height: 400px; position: relative; display: block; padding: 10px;">
+                        <div class="gauges-grid" style="padding: 10px;">
+                            <div style="text-align: center;">
+                                <div style="height: 160px; position: relative;">
+                                    <canvas id="gaugeFil1"></canvas>
+                                </div>
+                                <div id="fil1Name" style="color: var(--accent); font-size: 0.85em; margin-top: 5px; font-weight: 600;">Filial 1</div>
+                                <div id="fil1Meta" style="font-size: 0.75em; color: var(--text-light);">Meta: R$ 0</div>
+                                <div id="fil1Real" style="font-size: 0.75em; color: #00bcf2;">Real: R$ 0</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="height: 160px; position: relative;">
+                                    <canvas id="gaugeFil2"></canvas>
+                                </div>
+                                <div id="fil2Name" style="color: var(--accent); font-size: 0.85em; margin-top: 5px; font-weight: 600;">Filial 2</div>
+                                <div id="fil2Meta" style="font-size: 0.75em; color: var(--text-light);">Meta: R$ 0</div>
+                                <div id="fil2Real" style="font-size: 0.75em; color: #00bcf2;">Real: R$ 0</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="height: 160px; position: relative;">
+                                    <canvas id="gaugeFil3"></canvas>
+                                </div>
+                                <div id="fil3Name" style="color: var(--accent); font-size: 0.85em; margin-top: 5px; font-weight: 600;">Filial 3</div>
+                                <div id="fil3Meta" style="font-size: 0.75em; color: var(--text-light);">Meta: R$ 0</div>
+                                <div id="fil3Real" style="font-size: 0.75em; color: #00bcf2;">Real: R$ 0</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="height: 160px; position: relative;">
+                                    <canvas id="gaugeFil4"></canvas>
+                                </div>
+                                <div id="fil4Name" style="color: var(--accent); font-size: 0.85em; margin-top: 5px; font-weight: 600;">Filial 4</div>
+                                <div id="fil4Meta" style="font-size: 0.75em; color: var(--text-light);">Meta: R$ 0</div>
+                                <div id="fil4Real" style="font-size: 0.75em; color: #00bcf2;">Real: R$ 0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="chartFilialContainer" style="height: 400px; position: relative; display: none;">
                         <canvas id="chartTimesPie"></canvas>
                     </div>
                 </div>
@@ -1311,6 +1360,54 @@
                 <div style="text-align: right;">
                     <button class="btn btn-secondary" onclick="closeMetasModal()">Cancelar</button>
                     <button class="btn" onclick="saveMetasModal()">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL METAS MENSAIS -->
+    <div class="modal-overlay" id="metasModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 style="margin:0; font-weight: 300;">Configurar Metas Mensais</h3>
+                <button class="modal-close" onclick="closeMetasModal()">&times;</button>
+            </div>
+            
+            <div class="form-grid" style="margin-bottom: 20px;">
+                <div class="form-group" style="margin: 0;">
+                    <label>Mês</label>
+                    <select id="metaMes">
+                        <option value="1">Janeiro</option>
+                        <option value="2">Fevereiro</option>
+                        <option value="3">Março</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Maio</option>
+                        <option value="6">Junho</option>
+                        <option value="7">Julho</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Setembro</option>
+                        <option value="10">Outubro</option>
+                        <option value="11">Novembro</option>
+                        <option value="12">Dezembro</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label>Ano</label>
+                    <input type="number" id="metaAno" min="2020" max="2099">
+                </div>
+            </div>
+
+            <div id="metasFiliais" style="max-height: 400px; overflow-y: auto;">
+                <!-- Preenchido dinamicamente -->
+            </div>
+
+            <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="color: var(--accent); font-weight: 600;">
+                    Meta Global: <span id="metaTotalDisplay" style="color: #00bcf2;">R$ 0,00</span>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="closeMetasModal()">Cancelar</button>
+                    <button class="btn" onclick="salvarMetas()">Salvar Metas</button>
                 </div>
             </div>
         </div>
@@ -2822,6 +2919,9 @@
 
             // Load Filtered Charts (Evolution and Vendors)
             await loadFilteredCharts();
+            
+            // Atualizar gauges de metas baseado no mês da data inicial
+            loadMetasAndUpdateGauges();
 
             // Load Global Charts (Only responsive to Date Range) - Force last 12 months for monthly evolution
             const today = new Date();
@@ -4136,6 +4236,451 @@
         function closeDebugModal() {
             document.getElementById('debugModal').style.display = 'none';
         }
+
+        // ==================== METAS MENSAIS E GAUGES ====================
+        
+        let gaugeGlobalInstance = null;
+        let gaugeFil1Instance = null;
+        let gaugeFil2Instance = null;
+        let gaugeFil3Instance = null;
+        let gaugeFil4Instance = null;
+        
+        let metasMensais = {};
+        let showGaugesMensal = true;
+        let showGaugesFilial = true;
+        let isLoadingGauges = false; // Proteção contra loops
+        
+        function toggleChartMensal() {
+            showGaugesMensal = !showGaugesMensal;
+            const gaugeContainer = document.getElementById('gaugeMensalContainer');
+            const chartContainer = document.getElementById('chartMensalContainer');
+            const title = document.getElementById('chartMensalTitle');
+            
+            if (showGaugesMensal) {
+                gaugeContainer.style.display = 'flex';
+                chartContainer.style.display = 'none';
+                title.textContent = 'Meta Global';
+                loadMetasAndUpdateGauges();
+            } else {
+                gaugeContainer.style.display = 'none';
+                chartContainer.style.display = 'block';
+                title.textContent = 'Evolução Mensal de Vendas';
+            }
+        }
+        
+        function toggleChartFilial() {
+            showGaugesFilial = !showGaugesFilial;
+            const gaugeContainer = document.getElementById('gaugeFilialContainer');
+            const chartContainer = document.getElementById('chartFilialContainer');
+            const title = document.getElementById('chartFilialTitle');
+            
+            if (showGaugesFilial) {
+                gaugeContainer.style.display = 'block';
+                chartContainer.style.display = 'none';
+                title.textContent = 'Metas por Filial';
+                loadMetasAndUpdateGauges();
+            } else {
+                gaugeContainer.style.display = 'none';
+                chartContainer.style.display = 'block';
+                title.textContent = 'Vendas por Filial';
+            }
+        }
+        
+        async function loadMetasAndUpdateGauges() {
+            // Proteção contra loops infinitos
+            if (isLoadingGauges) {
+                console.warn('loadMetasAndUpdateGauges já está sendo executado, pulando...');
+                return;
+            }
+            
+            isLoadingGauges = true;
+            
+            // Obter o mês/ano da data inicial do filtro
+            const dataInicioInput = document.getElementById('dashDataInicio');
+            let mes, ano;
+            
+            if (dataInicioInput && dataInicioInput.value) {
+                const dataInicio = new Date(dataInicioInput.value + 'T00:00:00');
+                mes = dataInicio.getMonth() + 1;
+                ano = dataInicio.getFullYear();
+            } else {
+                // Se não houver data selecionada, usar mês atual
+                const hoje = new Date();
+                mes = hoje.getMonth() + 1;
+                ano = hoje.getFullYear();
+            }
+            
+            try {
+                const response = await fetch(`/api/metas/${mes}/${ano}`);
+                if (!response.ok) {
+                    console.warn(`Metas não encontradas para ${mes}/${ano}`);
+                    metasMensais = {};
+                    updateAllGauges({});
+                    return;
+                }
+                
+                const metas = await response.json();
+                metasMensais = {};
+                
+                metas.forEach(meta => {
+                    metasMensais[meta.filialId] = {
+                        filialNome: meta.filialNome,
+                        metaValor: meta.metaValor
+                    };
+                });
+                
+                // Buscar vendas do período selecionado
+                await loadVendasPeriodoSelecionado();
+                
+            } catch (error) {
+                console.error('Erro ao carregar metas:', error);
+                metasMensais = {};
+                updateAllGauges({});
+            } finally {
+                isLoadingGauges = false;
+            }
+        }
+        
+        async function loadVendasPeriodoSelecionado() {
+            const dataInicioInput = document.getElementById('dashDataInicio');
+            const dataFimInput = document.getElementById('dashDataFim');
+            
+            let dataInicio, dataFim;
+            
+            if (dataInicioInput && dataInicioInput.value && dataFimInput && dataFimInput.value) {
+                dataInicio = dataInicioInput.value;
+                dataFim = dataFimInput.value;
+            } else {
+                // Se não houver datas, usar o mês atual
+                const hoje = new Date();
+                const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+                const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+                dataInicio = primeiroDia.toISOString().split('T')[0];
+                dataFim = ultimoDia.toISOString().split('T')[0];
+            }
+            
+            try {
+                const params = new URLSearchParams({
+                    inicio: dataInicio,
+                    fim: dataFim
+                });
+                
+                // Usar endpoint correto que retorna vendas por filial (times)
+                const response = await fetch(`/api/vendas/dashboard/times?${params}`);
+                const data = await response.json();
+                
+                // Converter array de [nome, valor] para objeto { nome: valor }
+                const vendasPorFilial = {};
+                data.forEach(item => {
+                    if (item && item.length >= 2) {
+                        vendasPorFilial[item[0]] = item[1];
+                    }
+                });
+                
+                console.log('Vendas por filial carregadas:', vendasPorFilial);
+                updateAllGauges(vendasPorFilial);
+                
+            } catch (error) {
+                console.error('Erro ao carregar vendas do período:', error);
+                updateAllGauges({});
+            }
+        }
+        
+        function updateAllGauges(vendasPorFilial) {
+            console.log('[DEBUG] updateAllGauges chamado com:', vendasPorFilial);
+            console.log('[DEBUG] Metas mensais:', metasMensais);
+            
+            // Converter vendas em mapa filialId -> valor
+            const vendasMap = {};
+            Object.entries(vendasPorFilial).forEach(([filialNome, valor]) => {
+                // Encontrar filialId pelo nome (busca exata e normalizada)
+                const meta = Object.entries(metasMensais).find(([id, m]) => {
+                    const nomeNormalizado1 = m.filialNome.trim().toLowerCase();
+                    const nomeNormalizado2 = filialNome.trim().toLowerCase();
+                    return nomeNormalizado1 === nomeNormalizado2;
+                });
+                
+                if (meta) {
+                    vendasMap[meta[0]] = valor;
+                    console.log(`[DEBUG] Mapeado: ${filialNome} -> ID ${meta[0]} = R$ ${valor}`);
+                } else {
+                    console.warn(`[DEBUG] Filial não encontrada nas metas: "${filialNome}"`);
+                }
+            });
+            
+            console.log('[DEBUG] Vendas mapeadas por ID:', vendasMap);
+            
+            // Atualizar gauge global
+            let metaGlobalTotal = 0;
+            let realizadoGlobalTotal = 0;
+            
+            Object.entries(metasMensais).forEach(([filialId, meta]) => {
+                metaGlobalTotal += parseFloat(meta.metaValor || 0);
+                realizadoGlobalTotal += parseFloat(vendasMap[filialId] || 0);
+            });
+            
+            console.log(`[DEBUG] Meta Global: ${metaGlobalTotal}, Realizado Global: ${realizadoGlobalTotal}`);
+            updateGaugeGlobal(metaGlobalTotal, realizadoGlobalTotal);
+            
+            // Atualizar gauges individuais (assumindo 4 filiais)
+            const filiaisArray = Object.entries(metasMensais);
+            for (let i = 0; i < 4; i++) {
+                const idx = i + 1;
+                if (i < filiaisArray.length) {
+                    const [filialId, meta] = filiaisArray[i];
+                    const realizado = vendasMap[filialId] || 0;
+                    console.log(`[DEBUG] Gauge ${idx}: ${meta.filialNome}, Meta: ${meta.metaValor}, Realizado: ${realizado}`);
+                    updateGaugeFilial(idx, meta.filialNome, meta.metaValor, realizado);
+                } else {
+                    updateGaugeFilial(idx, `Filial ${idx}`, 0, 0);
+                }
+            }
+        }
+        
+        function updateGaugeGlobal(meta, realizado) {
+            const percentual = meta > 0 ? (realizado / meta) * 100 : 0;
+            
+            document.getElementById('metaGlobalValor').textContent = `Meta: ${formatCurrency(meta)}`;
+            document.getElementById('realizadoGlobalValor').textContent = `Realizado: ${formatCurrency(realizado)}`;
+            
+            const ctx = document.getElementById('gaugeGlobal').getContext('2d');
+            if (gaugeGlobalInstance) gaugeGlobalInstance.destroy();
+            
+            gaugeGlobalInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [Math.min(percentual, 100), Math.max(0, 100 - percentual)],
+                        backgroundColor: [
+                            percentual >= 100 ? '#107c10' : percentual >= 80 ? '#00bcf2' : percentual >= 50 ? '#ff8c00' : '#e81123',
+                            'rgba(255,255,255,0.1)'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    circumference: 180,
+                    rotation: 270,
+                    cutout: '75%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    }
+                },
+                plugins: [{
+                    afterDraw: (chart) => {
+                        const ctx = chart.ctx;
+                        const width = chart.width;
+                        const height = chart.height;
+                        ctx.restore();
+                        ctx.font = 'bold 2.5em sans-serif';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillStyle = '#fff';
+                        const text = `${percentual.toFixed(1)}%`;
+                        const textX = Math.round((width - ctx.measureText(text).width) / 2);
+                        const textY = height / 1.4;
+                        ctx.fillText(text, textX, textY);
+                        ctx.save();
+                    }
+                }]
+            });
+        }
+        
+        function updateGaugeFilial(idx, nome, meta, realizado) {
+            const percentual = meta > 0 ? (realizado / meta) * 100 : 0;
+            
+            document.getElementById(`fil${idx}Name`).textContent = nome;
+            document.getElementById(`fil${idx}Meta`).textContent = `Meta: ${formatCurrency(meta)}`;
+            document.getElementById(`fil${idx}Real`).textContent = `Real: ${formatCurrency(realizado)}`;
+            
+            const canvasId = `gaugeFil${idx}`;
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            
+            // Destruir instância anterior
+            const instanceName = `gaugeFil${idx}Instance`;
+            if (window[instanceName]) {
+                window[instanceName].destroy();
+            }
+            
+            window[instanceName] = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [Math.min(percentual, 100), Math.max(0, 100 - percentual)],
+                        backgroundColor: [
+                            percentual >= 100 ? '#107c10' : percentual >= 80 ? '#00bcf2' : percentual >= 50 ? '#ff8c00' : '#e81123',
+                            'rgba(255,255,255,0.1)'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    circumference: 180,
+                    rotation: 270,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    }
+                },
+                plugins: [{
+                    afterDraw: (chart) => {
+                        const ctx = chart.ctx;
+                        const width = chart.width;
+                        const height = chart.height;
+                        ctx.restore();
+                        ctx.font = 'bold 1.8em sans-serif';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillStyle = '#fff';
+                        const text = `${percentual.toFixed(0)}%`;
+                        const textX = Math.round((width - ctx.measureText(text).width) / 2);
+                        const textY = height / 1.3;
+                        ctx.fillText(text, textX, textY);
+                        ctx.save();
+                    }
+                }]
+            });
+        }
+        
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
+        }
+        
+        // Modal de Metas
+        function openMetasModal() {
+            const hoje = new Date();
+            document.getElementById('metaMes').value = hoje.getMonth() + 1;
+            document.getElementById('metaAno').value = hoje.getFullYear();
+            
+            carregarMetasDoMes();
+            document.getElementById('metasModal').classList.add('modal-active');
+        }
+        
+        function closeMetasModal() {
+            document.getElementById('metasModal').classList.remove('modal-active');
+        }
+        
+        async function carregarMetasDoMes() {
+            const mes = document.getElementById('metaMes').value;
+            const ano = document.getElementById('metaAno').value;
+            
+            try {
+                // Buscar filiais
+                const filiaisRes = await fetch('/api/vendas/filiais');
+                const filiais = await filiaisRes.json();
+                
+                // Buscar metas existentes
+                const metasRes = await fetch(`/api/metas/${mes}/${ano}`);
+                let metasExistentes = [];
+                if (metasRes.ok) {
+                    metasExistentes = await metasRes.json();
+                }
+                
+                // Criar mapa de metas
+                const metasMap = {};
+                metasExistentes.forEach(m => {
+                    metasMap[m.filialId] = m.metaValor;
+                });
+                
+                // Renderizar campos
+                const container = document.getElementById('metasFiliais');
+                container.innerHTML = '';
+                
+                filiais.forEach(filial => {
+                    const div = document.createElement('div');
+                    div.className = 'form-group';
+                    div.style.marginBottom = '15px';
+                    
+                    const label = document.createElement('label');
+                    label.textContent = filial.nome;
+                    
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.step = '0.01';
+                    input.placeholder = 'R$ 0,00';
+                    input.value = metasMap[filial.id] || '';
+                    input.dataset.filialId = filial.id;
+                    input.className = 'meta-input';
+                    input.addEventListener('input', calcularMetaTotal);
+                    
+                    div.appendChild(label);
+                    div.appendChild(input);
+                    container.appendChild(div);
+                });
+                
+                calcularMetaTotal();
+                
+            } catch (error) {
+                console.error('Erro ao carregar metas:', error);
+                alert('Erro ao carregar metas');
+            }
+        }
+        
+        function calcularMetaTotal() {
+            let total = 0;
+            document.querySelectorAll('.meta-input').forEach(input => {
+                const valor = parseFloat(input.value) || 0;
+                total += valor;
+            });
+            
+            document.getElementById('metaTotalDisplay').textContent = formatCurrency(total);
+        }
+        
+        async function salvarMetas() {
+            const mes = parseInt(document.getElementById('metaMes').value);
+            const ano = parseInt(document.getElementById('metaAno').value);
+            
+            const metas = [];
+            document.querySelectorAll('.meta-input').forEach(input => {
+                const filialId = parseInt(input.dataset.filialId);
+                const metaValor = parseFloat(input.value) || 0;
+                
+                metas.push({ filialId, metaValor });
+            });
+            
+            try {
+                const response = await fetch('/api/metas/salvar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mes, ano, metas })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Erro ao salvar metas');
+                }
+                
+                alert('Metas salvas com sucesso!');
+                closeMetasModal();
+                loadMetasAndUpdateGauges();
+                
+            } catch (error) {
+                console.error('Erro ao salvar metas:', error);
+                alert('Erro ao salvar metas. Tente novamente.');
+            }
+        }
+        
+        // Event listeners para mudança de mês/ano no modal (executar apenas uma vez)
+        let metasListenersAdded = false;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!metasListenersAdded) {
+                const metaMesEl = document.getElementById('metaMes');
+                const metaAnoEl = document.getElementById('metaAno');
+                
+                if (metaMesEl) metaMesEl.addEventListener('change', carregarMetasDoMes);
+                if (metaAnoEl) metaAnoEl.addEventListener('change', carregarMetasDoMes);
+                
+                metasListenersAdded = true;
+                
+                // Os gauges serão carregados quando loadDashboards() for chamado
+            }
+        });
+        
+        // ==================== FIM METAS MENSAIS E GAUGES ====================
 
         async function debugVendasFilial() {
             const inicio = document.getElementById('dashDataInicio').value;
